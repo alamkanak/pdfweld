@@ -1,0 +1,50 @@
+from reportlab.pdfgen import canvas
+from reportlab.lib.colors import HexColor, Color
+from pathlib import Path
+out=Path(__file__).resolve().parent.parent/'public'
+out.mkdir(exist_ok=True)
+c=canvas.Canvas(str(out/'field-notes.pdf'),pagesize=(595,842))
+c.setTitle('Field Notes — Spaces for tomorrow');c.setAuthor('PDFWeld Studio');c.setSubject('A document to explore, annotate and make your own')
+ink=HexColor('#29372f'); sage=HexColor('#dbe4c8'); cream=HexColor('#f8f7f2'); orange=HexColor('#e5a66d')
+def bg(color=cream):c.setFillColor(color);c.rect(0,0,595,842,fill=1,stroke=0)
+def label(x,y,text,size=9,color=ink):c.setFillColor(color);c.setFont('Helvetica',size);c.drawString(x,y,text)
+def footer(n):label(42,29,'FIELD NOTES  /  STUDIO JOURNAL',8);label(525,29,f'{n:02}',8)
+bg();label(42,792,'FIELD NOTES',12);label(441,792,'VOLUME 01 / 2026',8)
+c.setStrokeColor(ink);c.setLineWidth(.5);c.line(42,772,553,772)
+label(42,685,'Spaces for',54);label(42,623,'tomorrow.',54)
+label(44,579,'Thoughtful ideas. Lasting impressions.',13)
+# An architectural abstract, using real vector content.
+c.saveState();c.translate(42,149);c.setFillColor(sage);c.rect(0,0,511,382,fill=1,stroke=0)
+c.setFillColor(ink);c.roundRect(73,0,197,305,98,fill=1,stroke=0);c.rect(73,0,197,153,fill=1,stroke=0)
+c.setFillColor(cream);c.roundRect(116,0,111,255,55,fill=1,stroke=0);c.rect(116,0,111,125,fill=1,stroke=0)
+c.setFillColor(orange);c.circle(341,271,60,fill=1,stroke=0)
+c.setStrokeColor(ink);c.setLineWidth(.8)
+for x in range(303,460,13):c.line(x,0,x,166)
+c.line(0,40,511,40);c.restoreState()
+label(42,112,'A collection of perspectives on the places we build,',11)
+label(42,95,'the details we notice, and the work that matters.',11)
+footer(1);c.bookmarkPage('cover');c.addOutlineEntry('Spaces for tomorrow','cover',0);c.showPage()
+bg();label(42,788,'01 / THE PERSPECTIVE',9);label(42,719,'Good spaces begin',35);label(42,675,'with good questions.',35)
+paras=['Design is a conversation between what exists and what could be.','The best work starts with noticing: the way light crosses a room,','the rhythm of a street, the quiet comfort of a familiar material.','','This journal is an invitation to slow down. To collect observations.','To put an idea on paper before deciding what it should become.','','Our approach is simple: make things that feel considered,','useful, and human. Leave enough room for life to happen.']
+for i,t in enumerate(paras):label(44,620-i*20,t,12)
+c.setFillColor(sage);c.rect(42,218,511,148,fill=1,stroke=0);label(65,321,'The details are not the details.',23);label(65,286,'They make the design.',23);label(65,248,'A NOTE TO KEEP CLOSE',8)
+label(42,158,'Notice. Sketch. Refine. Repeat.',17);footer(2);c.bookmarkPage('perspective');c.addOutlineEntry('The perspective','perspective',0);c.showPage()
+bg();label(42,788,'02 / THE PROCESS',9);label(42,717,'Less noise.',41);label(42,665,'More intention.',41)
+for i,(title,body) in enumerate([('01   Observe','Look closely. Ask better questions. Collect what resonates.'),('02   Explore','Make room for the unexpected. Turn ideas into possibilities.'),('03   Make','Bring the strongest direction to life, one thoughtful detail at a time.')]):
+ y=563-i*133;c.setStrokeColor(HexColor('#c9cec3'));c.line(42,y+29,553,y+29);label(42,y,title,20);label(42,y-32,body,11)
+footer(3);c.bookmarkPage('process');c.addOutlineEntry('The process','process',0);c.showPage()
+bg();label(42,788,'03 / YOUR NEXT CHAPTER',9);label(42,719,'A little space',38);label(42,670,'for your ideas.',38);label(42,620,'Try the pen, leave a note, or fill in the fields below.',12)
+c.acroForm.textfield(name='Your name',tooltip='Your name',x=42,y=511,width=511,height=37,borderColor=HexColor('#bbc5ae'),fillColor=HexColor('#ffffff'),textColor=ink,fontSize=12,forceBorder=True)
+label(42,563,'NAME',8)
+c.acroForm.textfield(name='Project idea',tooltip='Project idea',x=42,y=370,width=511,height=98,fieldFlags='multiline',borderColor=HexColor('#bbc5ae'),fillColor=HexColor('#ffffff'),textColor=ink,fontSize=12,forceBorder=True)
+label(42,484,'SOMETHING YOU WOULD LIKE TO MAKE',8)
+c.acroForm.checkbox(name='Ready to begin',tooltip='Ready to begin',x=43,y=320,size=17,buttonStyle='check',borderColor=ink,fillColor=HexColor('#ffffff'),textColor=ink,forceBorder=True)
+label(72,324,'Ready to begin.',12);label(42,151,'Make something worth keeping.',23);footer(4);c.bookmarkPage('ideas');c.addOutlineEntry('Your ideas','ideas',0)
+c.save()
+# A large, deterministic real-document workload for the browser benchmark.
+c=canvas.Canvas(str(out/'benchmark-100-pages.pdf'),pagesize=(595,842));c.setTitle('PDFWeld benchmark corpus')
+for n in range(100):
+ c.setFillColor(cream);c.rect(0,0,595,842,fill=1,stroke=0);label(40,790,f'Benchmark page {n+1}',26)
+ for i in range(32):label(40,735-i*19,f'{i+1:02}  The quick brown fox — local PDF rendering and annotation workload.',10)
+ c.setFillColor(sage);c.rect(40,56,510,48,fill=1,stroke=0);c.showPage()
+c.save()

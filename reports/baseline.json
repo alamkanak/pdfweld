@@ -1,0 +1,150 @@
+{
+  "created": "2026-10-30T18:41:59.706Z",
+  "environment": "Headless Playwright browsers on the current host; mobile profiles emulate viewport and touch, not real phone hardware.",
+  "targetFps": 120,
+  "method": "Unmodified requestAnimationFrame cadence; no fake timers, forced refresh flags, or disabled frame limits. Cold open includes WASM initialization. Scrolling uses actual document viewport and visible-page rendering. Ink uses 120 real pointer moves. CPU values measure handler work, not pen-to-photon latency.",
+  "results": [
+    {
+      "profile": "desktop-chromium",
+      "corpus": "sample",
+      "coldOpenMs": 100.80887499999972,
+      "scroll": {
+        "version": "1",
+        "timestamp": "2026-10-30T18:41:50.512Z",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+        "viewport": "1440×900",
+        "devicePixelRatio": 1,
+        "scenario": "Real document: continuous scrolling and visible-page rendering",
+        "durationMs": 4014.2999999523163,
+        "displayHz": 60,
+        "fps": 60.00150003750093,
+        "frameP50": 16.699999999999818,
+        "frameP95": 16.700000000000273,
+        "frameP99": 16.799999999999955,
+        "droppedFrames": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "inputP95": 0,
+        "renderP95": 2.899999976158142,
+        "renders": 3,
+        "targetFps": 120,
+        "targetMet": false,
+        "notes": [
+          "The measured browser cadence is below 120 Hz. A 120 FPS result cannot be established on this display/session.",
+          "Frame intervals measure browser presentation cadence, not GPU execution time. Input samples measure handler CPU time, not end-to-end stylus latency."
+        ]
+      },
+      "ink": {
+        "version": "1",
+        "timestamp": "2026-10-30T18:41:52.582Z",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+        "viewport": "1440×900",
+        "devicePixelRatio": 1,
+        "scenario": "Pen: 120 pointer samples and PDF annotation commit",
+        "durationMs": 2066.399999976158,
+        "displayHz": 60,
+        "fps": 59.514111186018695,
+        "frameP50": 16.699999999999818,
+        "frameP95": 16.800000000000182,
+        "frameP99": 16.800000000000182,
+        "droppedFrames": 1,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "inputP95": 0.10000002384185791,
+        "renderP95": 0,
+        "renders": 0,
+        "targetFps": 120,
+        "targetMet": false,
+        "notes": [
+          "The measured browser cadence is below 120 Hz. A 120 FPS result cannot be established on this display/session.",
+          "Frame intervals measure browser presentation cadence, not GPU execution time. Input samples measure handler CPU time, not end-to-end stylus latency."
+        ]
+      },
+      "zoomSettleMs": 507.0409159999999,
+      "cache": {
+        "cachedBytes": 10389640,
+        "cachedTiles": 5,
+        "queued": 0,
+        "running": false
+      },
+      "errors": [],
+      "budgets": {
+        "frameCadence": true,
+        "inputCpu": true,
+        "boundedCache": true,
+        "noErrors": true
+      }
+    },
+    {
+      "profile": "desktop-chromium",
+      "corpus": "100-pages",
+      "coldOpenMs": 100.80887499999972,
+      "scroll": {
+        "version": "1",
+        "timestamp": "2026-10-30T18:41:57.146Z",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+        "viewport": "1440×900",
+        "devicePixelRatio": 1,
+        "scenario": "Real document: continuous scrolling and visible-page rendering",
+        "durationMs": 4008.5999999046326,
+        "displayHz": 60,
+        "fps": 60.00300015000751,
+        "frameP50": 16.69999999999891,
+        "frameP95": 16.700000000000728,
+        "frameP99": 16.800000000000182,
+        "droppedFrames": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "inputP95": 0,
+        "renderP95": 2.3000000715255737,
+        "renders": 4,
+        "targetFps": 120,
+        "targetMet": false,
+        "notes": [
+          "The measured browser cadence is below 120 Hz. A 120 FPS result cannot be established on this display/session.",
+          "Frame intervals measure browser presentation cadence, not GPU execution time. Input samples measure handler CPU time, not end-to-end stylus latency."
+        ]
+      },
+      "ink": {
+        "version": "1",
+        "timestamp": "2026-10-30T18:41:59.167Z",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+        "viewport": "1440×900",
+        "devicePixelRatio": 1,
+        "scenario": "Pen: 120 pointer samples and PDF annotation commit",
+        "durationMs": 2016.6000000238419,
+        "displayHz": 60,
+        "fps": 60.00600060006002,
+        "frameP50": 16.69999999999891,
+        "frameP95": 16.700000000000728,
+        "frameP99": 16.799999999999272,
+        "droppedFrames": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "inputP95": 0.10000002384185791,
+        "renderP95": 0,
+        "renders": 0,
+        "targetFps": 120,
+        "targetMet": false,
+        "notes": [
+          "The measured browser cadence is below 120 Hz. A 120 FPS result cannot be established on this display/session.",
+          "Frame intervals measure browser presentation cadence, not GPU execution time. Input samples measure handler CPU time, not end-to-end stylus latency."
+        ]
+      },
+      "zoomSettleMs": 508.73712499999965,
+      "cache": {
+        "cachedBytes": 10389640,
+        "cachedTiles": 5,
+        "queued": 0,
+        "running": false
+      },
+      "errors": [],
+      "budgets": {
+        "frameCadence": true,
+        "inputCpu": true,
+        "boundedCache": true,
+        "noErrors": true
+      }
+    }
+  ]
+}

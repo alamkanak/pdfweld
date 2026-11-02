@@ -1,0 +1,31 @@
+{
+  "generated": "2026-10-30T18:58:56.815Z",
+  "database": "caniuse-lite / Browserslist global usage",
+  "databaseVersion": "1.0.30001820",
+  "targets": [
+    "Chrome >= 90",
+    "Edge >= 90",
+    "Firefox >= 114",
+    "Safari >= 15.4",
+    "iOS >= 15.4",
+    "and_chr >= 90",
+    "and_ff >= 114",
+    "Samsung >= 16",
+    "Opera >= 76"
+  ],
+  "estimatedGlobalCoverage": 95.55060417000016,
+  "meaning": "Estimated global usage of targeted browser versions. Not a claim that every feature was tested on every device.",
+  "testedEngines": [
+    "Chromium",
+    "Firefox",
+    "WebKit"
+  ],
+  "requiredFeatures": [
+    "WebAssembly",
+    "module workers",
+    "ES modules and top-level await",
+    "ResizeObserver",
+    "IntersectionObserver",
+    "IndexedDB"
+  ]
+}

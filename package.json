@@ -1,0 +1,60 @@
+{
+  "name": "pdfweld",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "start": "node scripts/start.mjs",
+    "dev": "vite --host 0.0.0.0",
+    "build": "node scripts/prepare-assets.mjs && tsc -b && vite build && node scripts/source-bundle.mjs",
+    "preview": "vite preview --host 0.0.0.0",
+    "deploy": "node scripts/deploy.mjs",
+    "test": "node scripts/test.mjs",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "benchmark": "node scripts/benchmark.mjs",
+    "check": "tsc -b",
+    "prepare-assets": "node scripts/prepare-assets.mjs",
+    "browser-coverage": "node scripts/browser-coverage.mjs",
+    "verify:deploy": "node scripts/verify-deploy.mjs"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "5.3.0",
+    "@fontsource/manrope": "5.3.0",
+    "@libpdf/core": "0.5.3",
+    "clsx": "2.1.1",
+    "dexie": "4.4.7",
+    "fflate": "0.8.3",
+    "lucide-react": "1.65.0",
+    "mupdf": "1.28.1",
+    "pdf-lib": "1.17.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tesseract.js": "7.0.0",
+    "zustand": "5.0.16"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-legacy": "8.2.3",
+    "@vitejs/plugin-react": "6.1.2",
+    "autoprefixer": "10.6.2",
+    "browserslist": "4.29.5",
+    "caniuse-api": "4.0.0",
+    "gh-pages": "6.3.0",
+    "postcss": "8.5.32",
+    "prettier": "3.9.10",
+    "tailwindcss": "3.4.19",
+    "terser": "5.51.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vite-plugin-pwa": "2.0.0",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

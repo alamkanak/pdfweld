@@ -1,0 +1,10 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.bench-server.log
+.DS_Store
+
+.cache/
+test-results-*/
+*.tsbuildinfo
