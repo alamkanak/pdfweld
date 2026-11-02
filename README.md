@@ -2,6 +2,8 @@
 
 A private, canvas-first PDF studio for desktop and phone. React + TypeScript + Tailwind utilities, with the MuPDF WASM engine isolated in a Web Worker. No application backend, accounts, analytics, document uploads, remote fonts, or third-party processing calls.
 
+![Desktop workspace](docs/screenshots/desktop.png)
+
 ## Run locally — one command
 
 Requires Node.js 22.12 or newer.
@@ -144,8 +146,6 @@ Drag the divider beside **Library** or any editor pane to resize it. Widths are 
 ## Preview
 
 [Home tools on desktop](docs/screenshots/home-tools-desktop.png) · [Home tools on phone](docs/screenshots/home-tools-phone.png) · [Combine files](docs/screenshots/combine-desktop.png) · [Fill & sign](docs/screenshots/fill-sign-desktop.png)
-
-![Desktop workspace](docs/screenshots/desktop.png)
 
 [Phone workspace screenshot](docs/screenshots/phone.png)
 
