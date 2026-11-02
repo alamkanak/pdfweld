@@ -227,7 +227,7 @@ export function Home({ staticTool }: { staticTool?: HomeToolId | null } = {}) {
         (tab !== "recent" || file.updated >= cutoff),
     )
     .sort((a, b) =>
-      tab === "recent" ? b.updated - a.updated : a.name.localeCompare(b.name),
+      tab === "all" ? a.name.localeCompare(b.name) : b.updated - a.updated,
     );
   const drop = async (e: React.DragEvent) => {
     e.preventDefault();

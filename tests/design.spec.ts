@@ -276,3 +276,52 @@ test("editor panels and dialogs respect the typography, radius, and compact layo
     await assertReadableUI(page);
   }
 });
+
+test("Home and Recent put the last opened document first across views and reloads", async ({
+  page,
+  isMobile,
+}) => {
+  await seedLibrary(page);
+  const ids = () =>
+    page
+      .locator("[data-document-id]")
+      .evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute("data-document-id")),
+      );
+  await page.getByRole("button", { name: "Home", exact: true }).click();
+  expect(await ids()).toEqual(["newest", "earlier", "old"]);
+  await page
+    .getByRole("button", { name: "Open Archive.pdf", exact: true })
+    .click();
+  await expect(page.getByTestId("document-viewport")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Back to studio", exact: true })
+    .click();
+  await expect.poll(ids).toEqual(["old", "newest", "earlier"]);
+  await page
+    .getByRole("button", { name: "Recent documents", exact: true })
+    .click();
+  await expect.poll(ids).toEqual(["old", "newest", "earlier"]);
+  if (!isMobile) {
+    await page.getByRole("button", { name: "Grid view", exact: true }).click();
+    expect(await ids()).toEqual(["old", "newest", "earlier"]);
+    await page.getByRole("button", { name: "List view", exact: true }).click();
+    expect(await ids()).toEqual(["old", "newest", "earlier"]);
+  }
+  const newestId = await page.evaluate(async () => {
+    const bytes = await window.pdfweld.engine.call("save");
+    await window.pdfweld.state().open(bytes, "Z last opened.pdf");
+    return window.pdfweld.state().id;
+  });
+  await page
+    .getByRole("button", { name: "Back to studio", exact: true })
+    .click();
+  await expect.poll(ids).toEqual([newestId, "old", "newest", "earlier"]);
+  await page.reload();
+  await page.waitForFunction(() => !!window.pdfweld);
+  await expect.poll(ids).toEqual([newestId, "old", "newest", "earlier"]);
+  await page
+    .getByRole("button", { name: "Recent documents", exact: true })
+    .click();
+  expect(await ids()).toEqual([newestId, "old", "newest", "earlier"]);
+});

@@ -180,6 +180,21 @@ export const useApp = create<State>((set, get) => ({
       } catch {
         /* A preview failure must not prevent opening the document. */
       }
+      // Commit activity before exposing the editor. A quick return to Home
+      // must read this open's timestamp rather than the previous library row.
+      let autosaveStatus = "Saved in your library";
+      try {
+        await library.files.put({
+          id: key,
+          name,
+          bytes: data,
+          updated: Date.now(),
+          pages: info.pages.length,
+          thumbnail,
+        });
+      } catch {
+        autosaveStatus = "Recovery unavailable — export your PDF";
+      }
       set({
         info,
         id: key,
@@ -197,20 +212,8 @@ export const useApp = create<State>((set, get) => ({
         selection: [],
         panel:
           innerWidth < 768 ? null : mode === "fill-sign" ? "forms" : "pages",
-        autosaveStatus: "Saved in your library",
+        autosaveStatus,
       });
-      try {
-        await library.files.put({
-          id: key,
-          name,
-          bytes: data,
-          updated: Date.now(),
-          pages: info.pages.length,
-          thumbnail,
-        });
-      } catch {
-        set({ autosaveStatus: "Recovery unavailable — export your PDF" });
-      }
       if (navigator.storage?.persist) void navigator.storage.persist();
     } catch (e) {
       get().fail(e);
