@@ -58,6 +58,12 @@ Document filenames and contents never enter URLs, social metadata, JSON-LD, or t
 
 `npm run test:seo` checks initial HTML, metadata, all tool URLs, browser history, no-JavaScript readability, private-document metadata, the sitemap, the PNG preview, and offline deep links. `npm run verify:deploy` serves `dist/` as a GitHub Pages-style static host and verifies all public paths, assets, and real 404 behavior. Use `node scripts/verify-deploy.mjs --dir=OTHER_BUILD_DIRECTORY` for a custom-domain build.
 
+### Google Search Console verification
+
+Use the **URL-prefix** property `https://alamkanak.github.io/pdfweld/` and the HTML-file verification method. The downloaded file is kept unchanged at `public/googlee3db9dbd53e96972.html`; every build publishes it at `https://alamkanak.github.io/pdfweld/googlee3db9dbd53e96972.html` and includes it in the downloadable source archive. Keep this file permanently so Google can recheck ownership. After deployment, click **Verify** in Search Console and submit `sitemap.xml` under **Sitemaps**. HTML-tag, Analytics, Tag Manager, and DNS verification are alternative methods; they are not required when the file method succeeds. Fork owners should use their own verification file and property URL.
+
+`npm run verify:deploy` also checks that Google verification files return HTTP 200 without redirects and match the originals byte for byte.
+
 ## Working features
 
 ### Start from Home

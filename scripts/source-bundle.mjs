@@ -52,6 +52,13 @@ for (const name of [
 // Retain the licenses of shipped dependencies, including transitive packages.
 if (existsSync("public/CNAME"))
   files["public/CNAME"] = new Uint8Array(readFileSync("public/CNAME"));
+// Keep site ownership verification files in downloadable source rebuilds too.
+for (const entry of readdirSync("public", { withFileTypes: true })) {
+  if (entry.isFile() && /^google[a-zA-Z0-9_-]+\.html$/.test(entry.name)) {
+    const path = join("public", entry.name);
+    files[path] = new Uint8Array(readFileSync(path));
+  }
+}
 const collectLicenses = (directory) => {
   if (!existsSync(directory)) return;
   for (const entry of readdirSync(directory, { withFileTypes: true })) {

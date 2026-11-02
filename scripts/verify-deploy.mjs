@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { resolve, extname } from "node:path";
 import { chromium } from "@playwright/test";
 const root = resolve(
@@ -71,6 +71,23 @@ try {
     if (response.status() >= 400 && response.url() !== missing)
       errors.push(`${response.status()} ${response.url()}`);
   });
+  for (const entry of readdirSync("public", { withFileTypes: true })) {
+    if (!entry.isFile() || !/^google[a-zA-Z0-9_-]+\.html$/.test(entry.name))
+      continue;
+    const response = await context.request.get(
+      `${origin}${mount}${entry.name}`,
+      { maxRedirects: 0 },
+    );
+    if (
+      response.status() !== 200 ||
+      !(await response.body()).equals(
+        readFileSync(resolve("public", entry.name)),
+      )
+    )
+      throw new Error(
+        `Site verification file missing or changed: ${entry.name}`,
+      );
+  }
   for (const path of site.paths) {
     const response = await context.request.get(`${origin}${path}`);
     if (response.status() !== 200)
