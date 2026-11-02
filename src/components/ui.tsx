@@ -105,16 +105,34 @@ export function Badge({
 }
 export function Input({
   className,
+  compact = false,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+}: React.InputHTMLAttributes<HTMLInputElement> & { compact?: boolean }) {
   return (
     <input
       {...props}
       className={clsx(
-        "h-11 w-full rounded-lg border border-white/10 bg-studio-950/50 px-3 text-base sm:text-sm max-sm:!text-base text-white outline-none placeholder:text-studio-600 focus:border-lime-400/60 focus:ring-2 focus:ring-lime-400/10",
+        "w-full rounded-lg border border-white/10 bg-studio-950/50 px-3 text-base sm:text-sm max-sm:!text-base text-white outline-none placeholder:text-studio-600 focus:border-lime-400/60 focus:ring-2 focus:ring-lime-400/10",
+        compact ? "h-10" : "h-11",
         className,
       )}
     />
+  );
+}
+export function SearchField({
+  className,
+  compact = false,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { compact?: boolean }) {
+  return (
+    <div className={clsx("relative min-w-0", className)}>
+      <Search
+        size={16}
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-studio-400"
+      />
+      <Input {...props} compact={compact} className="pl-9" />
+    </div>
   );
 }
 export function Select({
@@ -139,7 +157,7 @@ export function Label({ children }: { children: ReactNode }) {
   );
 }
 export function Divider() {
-  return <div className="my-4 h-px bg-white/[.07]" />;
+  return <div className="my-3 h-px bg-white/10" role="separator" />;
 }
 export function Empty({
   icon,

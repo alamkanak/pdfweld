@@ -28,7 +28,16 @@ import { homeTools } from "../lib/home-tools";
 import { pickFile, download, baseName } from "../lib/files";
 import { metrics } from "../lib/performance";
 import { renderQueue } from "../lib/render-queue";
-import { Modal, Button, IconButton, Input, Badge, Label, Empty } from "./ui";
+import {
+  Modal,
+  Button,
+  IconButton,
+  Input,
+  SearchField,
+  Badge,
+  Label,
+  Empty,
+} from "./ui";
 import { Thumbnail } from "./PageView";
 import type { BenchmarkReport } from "../lib/types";
 import clsx from "clsx";
@@ -143,16 +152,13 @@ function Commands({ onClose }: { onClose: () => void }) {
       description="Every tool, a few keystrokes away."
       onClose={onClose}
     >
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-3.5 text-studio-600" />
-        <Input
-          placeholder="Search tools and commands…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
-          autoFocus
-        />
-      </div>
+      <SearchField
+        placeholder="Search tools and commands…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="mb-3 w-full"
+        autoFocus
+      />
       <div className="max-h-[52dvh] overflow-y-auto">
         {tools.map((t, i) => (
           <button

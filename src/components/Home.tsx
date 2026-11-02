@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  ArrowUpRight,
+  ChevronRight,
   Clock3,
   FilePlus2,
   FileText,
@@ -31,12 +31,13 @@ import {
 import { useVisible } from "../hooks/use-visible";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { ResizablePane } from "./ResizablePane";
+import { PaneToolbar, PaneSectionHeader } from "./PaneLayout";
 import clsx from "clsx";
 import type { RecentFile } from "../lib/types";
 import {
   Button,
   IconButton,
-  Input,
+  SearchField,
   Modal,
   NavigationButton,
   Empty,
@@ -161,10 +162,20 @@ function DocumentCard({
             </span>
           )}
         </div>
-        <h3 className="mt-2 truncate pr-9 text-sm font-medium text-studio-200">
+        <h3
+          className={clsx(
+            "mt-2 truncate text-sm font-medium text-studio-200",
+            children && "pr-10",
+          )}
+        >
           {title}
         </h3>
-        <p className="mt-0.5 truncate pr-9 text-xs text-studio-400">
+        <p
+          className={clsx(
+            "mt-0.5 truncate text-xs text-studio-400",
+            children && "pr-10",
+          )}
+        >
           {description}
         </p>
       </button>
@@ -248,7 +259,7 @@ export function Home() {
   const navigation = (
     <nav
       aria-label="Library navigation"
-      className="flex min-w-0 items-center gap-1 overflow-x-auto md:flex-col md:items-stretch md:overflow-visible"
+      className="flex min-w-0 items-center gap-1 overflow-x-auto md:flex-col md:items-stretch md:overflow-visible md:px-2"
     >
       <NavigationButton
         className="max-md:px-2 md:justify-start"
@@ -369,14 +380,14 @@ export function Home() {
           minWidth={192}
           maxWidth={360}
           reserve={360}
-          className="border-r border-white/10 px-2 py-3"
+          className="border-r border-white/10"
         >
-          <div className="mb-2 flex items-center justify-between px-3 text-xs font-semibold uppercase tracking-wide text-studio-400">
+          <div className="flex items-center justify-between p-3 text-xs font-semibold uppercase tracking-wide text-studio-400">
             <span>Library</span>
             <span>{files.length}</span>
           </div>
           {navigation}
-          <div className="mt-auto border-t border-white/10 px-3 pt-3 text-xs leading-5 text-studio-400">
+          <div className="mt-auto border-t border-white/10 p-3 text-xs leading-5 text-studio-400">
             <LockKeyhole size={14} className="mb-2" />
             Documents stay on this device.
           </div>
@@ -395,30 +406,28 @@ export function Home() {
           ) : tab === "tools" ? (
             <HomeTools />
           ) : (
-            <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-studio-950/20 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2">
-              <div className="flex flex-wrap items-center gap-2 border-b border-white/[.06] pb-2">
-                <div className="relative w-full sm:ml-auto sm:w-56">
-                  <Search
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-2.5 text-studio-400"
-                  />
-                  <Input
-                    aria-label="Find a document"
-                    placeholder="Find a document"
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="h-9 pl-9"
-                  />
-                </div>
+            <main
+              data-testid="library-pane"
+              className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-studio-950/20"
+            >
+              <PaneToolbar role="group" aria-label="Document controls">
+                <SearchField
+                  aria-label="Find a document"
+                  placeholder="Find a document"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="w-full sm:ml-auto sm:w-56"
+                  compact
+                />
                 <div
                   className="hidden items-center gap-1 md:flex"
+                  role="group"
                   aria-label="Document view"
                 >
                   <IconButton
                     label="List view"
                     active={view === "list"}
                     onClick={() => changeView("list")}
-                    className="h-9 w-9"
                   >
                     <List size={17} />
                   </IconButton>
@@ -426,17 +435,16 @@ export function Home() {
                     label="Grid view"
                     active={view === "grid"}
                     onClick={() => changeView("grid")}
-                    className="h-9 w-9"
                   >
                     <Grid2X2 size={17} />
                   </IconButton>
                 </div>
-              </div>
+              </PaneToolbar>
               {tab === "home" && (
                 <RecommendedTools onAll={() => setTab("tools")} />
               )}
               <section aria-labelledby="library-title">
-                <div className="flex flex-wrap items-center justify-between gap-2 py-3">
+                <PaneSectionHeader>
                   <div>
                     <h1
                       id="library-title"
@@ -454,112 +462,120 @@ export function Home() {
                     {shown.length}{" "}
                     {shown.length === 1 ? "document" : "documents"}
                   </span>
-                </div>
+                </PaneSectionHeader>
                 {list && tab !== "recent" && !filter && !files.length && (
-                  <button
-                    onClick={() => void s.demo()}
-                    aria-label="Open the sample document"
-                    className="mb-3 flex w-full items-center gap-3 rounded-lg border border-white/10 bg-studio-850 p-3 text-left hover:bg-white/5"
-                  >
-                    <img
-                      src={`${import.meta.env.BASE_URL}field-notes-cover.png`}
-                      alt="Field Notes sample PDF cover"
-                      className="h-14 w-10 object-contain"
-                    />
-                    <span className="flex-1">
-                      <strong className="block text-sm font-medium text-studio-200">
-                        Explore Field Notes
-                      </strong>
-                      <span className="text-xs text-studio-400">
-                        Try the tools with a sample PDF.
+                  <div className="px-3 pb-3">
+                    <button
+                      onClick={() => void s.demo()}
+                      aria-label="Open the sample document"
+                      className="flex w-full items-center gap-3 rounded-lg border border-white/10 bg-studio-850 p-3 text-left hover:bg-white/5"
+                    >
+                      <img
+                        src={`${import.meta.env.BASE_URL}field-notes-cover.png`}
+                        alt="Field Notes sample PDF cover"
+                        className="h-14 w-10 object-contain"
+                      />
+                      <span className="flex-1">
+                        <strong className="block text-sm font-medium text-studio-200">
+                          Explore Field Notes
+                        </strong>
+                        <span className="text-xs text-studio-400">
+                          Try the tools with a sample PDF.
+                        </span>
                       </span>
-                    </span>
-                    <ArrowUpRight size={17} className="text-lime-300" />
-                  </button>
+                      <ChevronRight size={17} className="text-lime-300" />
+                    </button>
+                  </div>
                 )}
                 <div data-testid="document-gallery">
                   {list ? (
-                    <table
-                      aria-label="Documents"
-                      className="w-full table-fixed text-left"
-                    >
-                      <thead className="border-y border-white/10 bg-studio-850/50 text-xs text-studio-400">
-                        <tr>
-                          <th className="px-3 py-2 font-medium">Name</th>
-                          <th className="w-14 px-2 py-2 font-medium">Pages</th>
-                          <th className="hidden w-36 px-2 py-2 font-medium lg:table-cell">
-                            Modified
-                          </th>
-                          <th className="hidden w-20 px-2 py-2 font-medium xl:table-cell">
-                            Size
-                          </th>
-                          <th className="w-10">
-                            <span className="sr-only">Actions</span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {shown.map((file) => (
-                          <tr
-                            key={file.id}
-                            data-document-id={file.id}
-                            className="group border-b border-white/[.06] hover:bg-white/[.035]"
-                          >
-                            <td className="min-w-0 px-3 py-2">
-                              <button
-                                aria-label={`Open ${file.name}`}
-                                onClick={() =>
-                                  void s.open(file.bytes, file.name, file.id)
-                                }
-                                className="flex w-full min-w-0 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
-                              >
-                                <span className="block h-14 w-10 shrink-0 overflow-hidden rounded-lg bg-studio-800">
-                                  <DocumentPreview file={file} small />
-                                </span>
-                                <span className="min-w-0">
-                                  <span className="block truncate text-sm font-medium text-studio-200">
-                                    {file.name}
-                                  </span>
-                                  <span className="mt-1 block truncate text-xs text-studio-400 lg:hidden">
-                                    {new Date(file.updated).toLocaleDateString(
-                                      undefined,
-                                      { month: "short", day: "numeric" },
-                                    )}
-                                  </span>
-                                </span>
-                              </button>
-                            </td>
-                            <td className="px-2 text-xs text-studio-400">
-                              {file.pages}
-                            </td>
-                            <td className="hidden px-2 text-xs text-studio-400 lg:table-cell">
-                              {new Date(file.updated).toLocaleDateString(
-                                undefined,
-                                { month: "short", day: "numeric" },
-                              )}
-                            </td>
-                            <td className="hidden px-2 text-xs text-studio-400 xl:table-cell">
-                              {Math.max(
-                                1,
-                                Math.round(file.bytes.byteLength / 1024),
-                              )}{" "}
-                              KB
-                            </td>
-                            <td>
-                              <IconButton
-                                label={`Remove ${file.name} from library`}
-                                className="h-9 w-9"
-                                onClick={() => void removeFile(file)}
-                              >
-                                <Trash2 size={15} />
-                              </IconButton>
-                            </td>
+                    shown.length > 0 && (
+                      <table
+                        aria-label="Documents"
+                        className="w-full table-fixed text-left"
+                      >
+                        <thead className="border-y border-white/10 bg-studio-850/50 text-xs text-studio-400">
+                          <tr>
+                            <th className="px-3 py-2 font-medium">Name</th>
+                            <th className="w-14 px-2 py-2 font-medium">
+                              Pages
+                            </th>
+                            <th className="hidden w-36 px-2 py-2 font-medium lg:table-cell">
+                              Modified
+                            </th>
+                            <th className="hidden w-20 px-2 py-2 font-medium xl:table-cell">
+                              Size
+                            </th>
+                            <th className="w-12">
+                              <span className="sr-only">Actions</span>
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {shown.map((file) => (
+                            <tr
+                              key={file.id}
+                              data-document-id={file.id}
+                              className="group border-b border-white/[.06] hover:bg-white/[.035]"
+                            >
+                              <td className="min-w-0 px-3 py-2">
+                                <button
+                                  aria-label={`Open ${file.name}`}
+                                  onClick={() =>
+                                    void s.open(file.bytes, file.name, file.id)
+                                  }
+                                  className="flex w-full min-w-0 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+                                >
+                                  <span className="block h-14 w-10 shrink-0 overflow-hidden rounded-lg bg-studio-800">
+                                    <DocumentPreview file={file} small />
+                                  </span>
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-sm font-medium text-studio-200">
+                                      {file.name}
+                                    </span>
+                                    <span className="mt-1 block truncate text-xs text-studio-400 lg:hidden">
+                                      {new Date(
+                                        file.updated,
+                                      ).toLocaleDateString(undefined, {
+                                        month: "short",
+                                        day: "numeric",
+                                      })}
+                                    </span>
+                                  </span>
+                                </button>
+                              </td>
+                              <td className="px-2 text-xs text-studio-400">
+                                {file.pages}
+                              </td>
+                              <td className="hidden px-2 text-xs text-studio-400 lg:table-cell">
+                                {new Date(file.updated).toLocaleDateString(
+                                  undefined,
+                                  { month: "short", day: "numeric" },
+                                )}
+                              </td>
+                              <td className="hidden px-2 text-xs text-studio-400 xl:table-cell">
+                                {Math.max(
+                                  1,
+                                  Math.round(file.bytes.byteLength / 1024),
+                                )}{" "}
+                                KB
+                              </td>
+                              <td className="pr-3 text-right">
+                                <IconButton
+                                  label={`Remove ${file.name} from library`}
+                                  className="h-9 w-9"
+                                  onClick={() => void removeFile(file)}
+                                >
+                                  <Trash2 size={15} />
+                                </IconButton>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )
                   ) : (
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
+                    <div className="grid grid-cols-2 gap-3 px-3 pb-3 sm:grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
                       {tab !== "recent" && !filter && (
                         <DocumentCard
                           title="Field Notes"
@@ -600,7 +616,7 @@ export function Home() {
                       {tab !== "recent" && !filter && (
                         <button
                           onClick={() => void newDocument()}
-                          className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 text-sm text-studio-400 hover:border-lime-400/50 hover:bg-white/[.025] hover:text-white md:aspect-[4/3]"
+                          className="flex aspect-[3/4] self-start flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 text-sm text-studio-400 hover:border-lime-400/50 hover:bg-white/[.025] hover:text-white md:aspect-[4/3]"
                         >
                           <FilePlus2 size={28} strokeWidth={1.5} />
                           <span>New document</span>
@@ -637,7 +653,7 @@ export function Home() {
                   </Empty>
                 )}
               </section>
-              <footer className="mt-4 flex items-center gap-2 border-t border-white/[.06] py-3 text-xs text-studio-400 md:hidden">
+              <footer className="flex items-center gap-2 border-t border-white/10 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 text-xs text-studio-400 md:hidden">
                 <LockKeyhole size={14} />
                 Your files stay on this device.
               </footer>
@@ -679,7 +695,7 @@ export function Home() {
           </div>
           <Button className="mt-4 w-full" onClick={() => setAbout(false)}>
             Back to the studio
-            <ArrowUpRight size={15} />
+            <ChevronRight size={15} />
           </Button>
         </Modal>
       )}

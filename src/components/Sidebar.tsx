@@ -30,6 +30,7 @@ import {
   Button,
   IconButton,
   Input,
+  SearchField,
   Label,
   Select,
   Divider,
@@ -66,7 +67,7 @@ export function Sidebar() {
         sheet
         className="border-r border-white/[.07]"
       >
-        <div className="flex h-12 shrink-0 items-center justify-between px-3">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/10 px-3">
           <h2 className="text-sm font-semibold text-white">
             {titles[panel]}
             {panel === "pages" && (
@@ -83,7 +84,7 @@ export function Sidebar() {
             <PanelLeftClose size={16} />
           </IconButton>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(20px,env(safe-area-inset-bottom))]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
           {panel === "pages" ? (
             <Pages />
           ) : panel === "outline" ? (
@@ -172,8 +173,8 @@ function Bookmarks() {
     items.map((item, i) => (
       <div key={`${depth}-${i}`}>
         <button
-          className="flex w-full items-center gap-2 rounded-lg py-3 pr-3 text-left text-xs text-studio-400 hover:bg-white/5 hover:text-white"
-          style={{ paddingLeft: 16 + depth * 12 }}
+          className="flex w-full items-center gap-2 rounded-lg py-3 pr-2 text-left text-xs text-studio-400 hover:bg-white/5 hover:text-white"
+          style={{ paddingLeft: 8 + depth * 12 }}
           onClick={() =>
             goToPage(
               item.page ??
@@ -237,8 +238,8 @@ function Comments() {
   const annotations =
     details?.annotations.filter((a) => a.type !== "Redact") || [];
   return (
-    <div className="px-4">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="px-3">
+      <div className="mb-3 flex items-center justify-between">
         <span className="text-xs text-studio-600">On page {page + 1}</span>
         <button
           className="text-xs text-lime-300"
@@ -259,7 +260,7 @@ function Comments() {
           .map((a) => (
             <div
               key={a.id}
-              className="mb-3 rounded-lg border border-white/[.06] bg-white/[.025] p-3.5"
+              className="mb-3 rounded-lg border border-white/[.06] bg-white/[.025] p-3"
             >
               <div className="mb-3 flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-lime-400/10 text-xs font-semibold text-lime-300">
@@ -393,21 +394,15 @@ function SearchPanel() {
     };
   }, [query, info.pages.length, revision]);
   return (
-    <div className="px-4">
-      <div className="relative">
-        <Input
-          placeholder="Find a word or phrase…"
-          value={query}
-          autoFocus
-          onChange={(e) => useApp.setState({ searchQuery: e.target.value })}
-          className="pr-9"
-        />
-        <SearchIcon
-          size={15}
-          className="absolute right-3 top-3.5 text-studio-600"
-        />
-      </div>
-      <p className="my-4 text-xs text-studio-600">
+    <div className="px-3">
+      <SearchField
+        placeholder="Find a word or phrase…"
+        value={query}
+        autoFocus
+        onChange={(e) => useApp.setState({ searchQuery: e.target.value })}
+        className="w-full"
+      />
+      <p className="my-3 text-xs text-studio-600">
         {searching ? "Searching…" : `${hits.length} results`}
       </p>
       {hits.map((hit, i) => (
@@ -439,12 +434,12 @@ function SearchPanel() {
 export function ToolsPanel({ onChoose }: { onChoose?: () => void }) {
   const [filter, setFilter] = useState("");
   return (
-    <div className="px-4">
-      <Input
+    <div className="px-3">
+      <SearchField
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         placeholder="Find a tool…"
-        className="mb-4"
+        className="mb-3 w-full"
       />
       {["Annotate", "Pages", "Edit", "Protect", "Export", "Inspect"].map(
         (group) => {
@@ -503,25 +498,29 @@ function Properties() {
     [info.title, info.author, info.subject, info.keywords],
   );
   return (
-    <div className="space-y-4 px-4">
-      {Object.entries(values).map(([key, value]) => (
-        <label key={key} className="block">
-          <Label>{key}</Label>
-          <Input
-            value={value}
-            onChange={(e) => setValues({ ...values, [key]: e.target.value })}
-          />
-        </label>
-      ))}
-      <Button
-        className="w-full"
-        variant="primary"
-        onClick={() => void useApp.getState().act({ type: "metadata", values })}
-      >
-        Save details
-      </Button>
+    <div className="space-y-3">
+      <div className="space-y-3 px-3">
+        {Object.entries(values).map(([key, value]) => (
+          <label key={key} className="block">
+            <Label>{key}</Label>
+            <Input
+              value={value}
+              onChange={(e) => setValues({ ...values, [key]: e.target.value })}
+            />
+          </label>
+        ))}
+        <Button
+          className="w-full"
+          variant="primary"
+          onClick={() =>
+            void useApp.getState().act({ type: "metadata", values })
+          }
+        >
+          Save details
+        </Button>
+      </div>
       <Divider />
-      <dl className="space-y-3 text-xs">
+      <dl className="space-y-3 px-3 text-xs">
         {[
           [
             "Format",
@@ -538,14 +537,16 @@ function Properties() {
         ))}
       </dl>
       <Divider />
-      <Button
-        className="w-full text-xs"
-        variant="ghost"
-        onClick={() => void runAction("check")}
-      >
-        Run document check
-        <ArrowUpRight size={14} />
-      </Button>
+      <div className="px-3">
+        <Button
+          className="w-full text-xs"
+          variant="ghost"
+          onClick={() => void runAction("check")}
+        >
+          Run document check
+          <ArrowUpRight size={14} />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -553,8 +554,8 @@ function Forms() {
   const details = useDetails(),
     page = useApp((s) => s.page);
   return (
-    <div className="px-4">
-      <p className="mb-4 text-xs text-studio-600">On page {page + 1}</p>
+    <div className="px-3">
+      <p className="mb-3 text-xs text-studio-600">On page {page + 1}</p>
       {!details?.fields.length ? (
         <Empty icon={<SquareCheck size={24} />}>
           No form fields on this page.
@@ -626,7 +627,7 @@ function Forms() {
 function LayersPanel() {
   const info = useApp((s) => s.info)!;
   return (
-    <div className="px-4">
+    <div className="px-3">
       {!info.layers.length ? (
         <Empty icon={<Layers size={24} />}>
           This PDF has no optional content layers.
@@ -657,7 +658,7 @@ function LayersPanel() {
 function Attachments() {
   const info = useApp((s) => s.info)!;
   return (
-    <div className="px-4">
+    <div className="px-3">
       <Button
         className="w-full text-xs"
         onClick={async () => {

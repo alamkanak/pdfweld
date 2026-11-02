@@ -30,6 +30,7 @@ import {
 import type { DocumentInfo, RecentFile } from "../lib/types";
 import { Button, IconButton, Input, Label, Select } from "./ui";
 import { ResizablePane } from "./ResizablePane";
+import { PaneToolbar } from "./PaneLayout";
 import { useMediaQuery } from "../hooks/use-media-query";
 import clsx from "clsx";
 
@@ -108,128 +109,135 @@ function ToolSettings({
     </label>
   );
   return (
-    <fieldset disabled={disabled} className="space-y-3">
+    <fieldset disabled={disabled} className="min-w-0">
       <legend className="mb-3 text-sm font-medium text-white">Options</legend>
-      {["combine", "images-pdf"].includes(tool) &&
-        field("name", "Output filename", "text", true)}
-      {["combine", "images-pdf"].includes(tool) &&
-        select("pageSize", "Image page size", ["A4", "US Letter", "Fit image"])}
-      {["extract", "rotate", "watermark", "pdf-images", "pdf-text"].includes(
-        tool,
-      ) && (
-        <label className="block">
-          <Label>Pages</Label>
-          <Input
-            aria-label="Pages"
-            value={options.pages}
-            placeholder="All pages, or 1, 3-5"
-            onChange={(e) => onChange("pages", e.target.value)}
-          />
-        </label>
-      )}
-      {tool === "split" && field("every", "Pages per file", "number", true)}
-      {tool === "rotate" &&
-        select("angle", "Rotation (degrees)", ["90", "180", "270"])}
-      {tool === "watermark" && field("text", "Watermark text", "text", true)}
-      {tool === "protect" && (
-        <>
-          {field("userPassword", "Password to open", "password", true)}
-          {field("ownerPassword", "Owner password", "password", true)}
-          <p className="text-xs leading-5 text-studio-400">
-            These passwords apply to every output file. They stay on this
-            device.
-          </p>
-        </>
-      )}
-      {tool === "pdf-images" && (
-        <>
-          {select("format", "Image format", ["PNG", "JPG", "SVG"])}
+      <div className="space-y-3">
+        {["combine", "images-pdf"].includes(tool) &&
+          field("name", "Output filename", "text", true)}
+        {["combine", "images-pdf"].includes(tool) &&
+          select("pageSize", "Image page size", [
+            "A4",
+            "US Letter",
+            "Fit image",
+          ])}
+        {["extract", "rotate", "watermark", "pdf-images", "pdf-text"].includes(
+          tool,
+        ) && (
           <label className="block">
-            <Label>Resolution</Label>
-            <Select
-              aria-label="Resolution"
-              value={options.scale}
-              onChange={(e) => onChange("scale", e.target.value)}
-            >
-              {[1, 2, 3].map((n) => (
-                <option key={n} value={n}>
-                  {72 * n} dpi ({n}×)
-                </option>
-              ))}
-            </Select>
+            <Label>Pages</Label>
+            <Input
+              aria-label="Pages"
+              value={options.pages}
+              placeholder="All pages, or 1, 3-5"
+              onChange={(e) => onChange("pages", e.target.value)}
+            />
           </label>
-        </>
-      )}
-      {tool === "pdf-text" &&
-        select("textFormat", "Text format", ["Plain text", "HTML", "JSON"])}
-      {tool === "certificate-sign" && (
-        <>
-          <input
-            ref={certificateInput}
-            aria-label="Certificate file"
-            type="file"
-            accept=".p12,.pfx"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onCertificate(file);
-              e.target.value = "";
-            }}
-          />
-          <Button
-            className="w-full"
-            type="button"
-            onClick={() => certificateInput.current?.click()}
-          >
-            Choose certificate
-          </Button>
-          {certificate && (
-            <p className="break-all text-xs text-studio-400">{certificate}</p>
-          )}
-          {field("certificatePassword", "Certificate password", "password")}
-          {field("reason", "Reason for signing")}
+        )}
+        {tool === "split" && field("every", "Pages per file", "number", true)}
+        {tool === "rotate" &&
+          select("angle", "Rotation (degrees)", ["90", "180", "270"])}
+        {tool === "watermark" && field("text", "Watermark text", "text", true)}
+        {tool === "protect" && (
+          <>
+            {field("userPassword", "Password to open", "password", true)}
+            {field("ownerPassword", "Owner password", "password", true)}
+            <p className="text-xs leading-5 text-studio-400">
+              These passwords apply to every output file. They stay on this
+              device.
+            </p>
+          </>
+        )}
+        {tool === "pdf-images" && (
+          <>
+            {select("format", "Image format", ["PNG", "JPG", "SVG"])}
+            <label className="block">
+              <Label>Resolution</Label>
+              <Select
+                aria-label="Resolution"
+                value={options.scale}
+                onChange={(e) => onChange("scale", e.target.value)}
+              >
+                {[1, 2, 3].map((n) => (
+                  <option key={n} value={n}>
+                    {72 * n} dpi ({n}×)
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </>
+        )}
+        {tool === "pdf-text" &&
+          select("textFormat", "Text format", ["Plain text", "HTML", "JSON"])}
+        {tool === "certificate-sign" && (
+          <>
+            <input
+              ref={certificateInput}
+              aria-label="Certificate file"
+              type="file"
+              accept=".p12,.pfx"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onCertificate(file);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              className="w-full"
+              type="button"
+              onClick={() => certificateInput.current?.click()}
+            >
+              Choose certificate
+            </Button>
+            {certificate && (
+              <p className="break-all text-xs text-studio-400">{certificate}</p>
+            )}
+            {field("certificatePassword", "Certificate password", "password")}
+            {field("reason", "Reason for signing")}
+            <p className="text-xs leading-5 text-studio-400">
+              A local P12/PFX signature. No timestamp or online validation
+              service is contacted.
+            </p>
+          </>
+        )}
+        {tool === "compress" && (
           <p className="text-xs leading-5 text-studio-400">
-            A local P12/PFX signature. No timestamp or online validation service
-            is contacted.
+            Lossless stream/font compression and removal of unused objects.
+            Images are not downsampled. An already-smaller original is kept
+            unchanged.
           </p>
-        </>
-      )}
-      {tool === "compress" && (
-        <p className="text-xs leading-5 text-studio-400">
-          Lossless stream/font compression and removal of unused objects. Images
-          are not downsampled. An already-smaller original is kept unchanged.
-        </p>
-      )}
-      {tool === "fill-sign" && (
-        <p className="text-xs leading-5 text-studio-400">
-          Continue to a workspace for form fields, text, and drawn or uploaded
-          signatures.
-        </p>
-      )}
-      {tool === "combine" && (
-        <p className="text-xs leading-5 text-studio-400">
-          Files combine in the order shown. Each source gets a bookmark. Forms,
-          links, layers, and attachments are carried over.
-        </p>
-      )}
-      {tool === "compare" && (
-        <p className="text-xs leading-5 text-studio-400">
-          Choose exactly two PDFs. This compares extracted text, not images or
-          visual layout.
-        </p>
-      )}
-      {["edit-pdf", "organize", "crop", "redact", "ocr"].includes(tool) && (
-        <p className="text-xs leading-5 text-studio-400">
-          Choose a PDF here, then continue directly to this tool.
-        </p>
-      )}
-      {["numbers", "sanitize", "flatten", "extract", "split"].includes(
-        tool,
-      ) && (
-        <p className="text-xs leading-5 text-studio-400">
-          A new copy is created. Your source files are unchanged.
-        </p>
-      )}
+        )}
+        {tool === "fill-sign" && (
+          <p className="text-xs leading-5 text-studio-400">
+            Continue to a workspace for form fields, text, and drawn or uploaded
+            signatures.
+          </p>
+        )}
+        {tool === "combine" && (
+          <p className="text-xs leading-5 text-studio-400">
+            Files combine in the order shown. Each source gets a bookmark.
+            Forms, links, layers, and attachments are carried over.
+          </p>
+        )}
+        {tool === "compare" && (
+          <p className="text-xs leading-5 text-studio-400">
+            Choose exactly two PDFs. This compares extracted text, not images or
+            visual layout.
+          </p>
+        )}
+        {["edit-pdf", "organize", "crop", "redact", "ocr"].includes(tool) && (
+          <p className="text-xs leading-5 text-studio-400">
+            Choose a PDF here, then continue directly to this tool.
+          </p>
+        )}
+        {["numbers", "sanitize", "flatten", "extract", "split"].includes(
+          tool,
+        ) && (
+          <p className="text-xs leading-5 text-studio-400">
+            A new copy is created. Your source files are unchanged.
+          </p>
+        )}
+      </div>
     </fieldset>
   );
 }
@@ -484,7 +492,7 @@ export function ToolWorkspace({
           void addUploads(Array.from(e.dataTransfer.files));
       }}
     >
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 p-3">
+      <PaneToolbar as="header">
         <div className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-0">
           <IconButton label="Back to home tools" onClick={onClose}>
             <ArrowLeft size={18} />
@@ -525,7 +533,7 @@ export function ToolWorkspace({
             </Button>
           )}
         </div>
-      </header>
+      </PaneToolbar>
       <div className="flex min-h-0 flex-1">
         {desktop && (
           <ResizablePane
