@@ -8,4 +8,13 @@ import "@fontsource/manrope/latin-600.css";
 import "@fontsource/manrope/latin-700.css";
 import "./index.css";
 import App from "./App";
-ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
+import { initialPublicRoute } from "./seo/navigation";
+import { NotFound } from "./seo/PublicContent";
+const route = initialPublicRoute();
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  route === "not-found" ? (
+    <NotFound base={import.meta.env.BASE_URL} />
+  ) : (
+    <App />
+  ),
+);

@@ -31,6 +31,7 @@ import type { DocumentInfo, RecentFile } from "../lib/types";
 import { Button, IconButton, Input, Label, Select } from "./ui";
 import { ResizablePane } from "./ResizablePane";
 import { PaneToolbar } from "./PaneLayout";
+import { ToolGuide } from "../seo/PublicContent";
 import { useMediaQuery } from "../hooks/use-media-query";
 import clsx from "clsx";
 
@@ -863,6 +864,7 @@ export function ToolWorkspace({
                   {settings}
                 </div>
               )}
+              <ToolGuide id={id} />
             </>
           )}
         </div>

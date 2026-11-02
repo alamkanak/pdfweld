@@ -11,6 +11,7 @@ import { engine } from "./lib/client";
 import { metrics } from "./lib/performance";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import type { Operation } from "./lib/types";
+import { installPublicNavigation } from "./seo/navigation";
 declare global {
   interface Window {
     pdfweld: {
@@ -55,6 +56,7 @@ function Updates() {
   ) : null;
 }
 export default function App() {
+  useEffect(installPublicNavigation, []);
   const info = useApp((s) => s.info),
     revision = useApp((s) => s.revision),
     id = useApp((s) => s.id);

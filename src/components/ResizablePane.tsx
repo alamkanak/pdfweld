@@ -42,7 +42,9 @@ export function ResizablePane({
   const root = useRef<HTMLElement>(null),
     vertical = useRef<HTMLDivElement>(null),
     horizontal = useRef<HTMLDivElement>(null);
-  const initialHeight = Math.round(Math.min(560, innerHeight * 0.65));
+  const initialHeight = Math.round(
+    Math.min(560, (typeof innerHeight === "number" ? innerHeight : 800) * 0.65),
+  );
   const [preferred, setPreferred] = useState(() => ({
     width: read(`pdfweld-pane:${id}:width`, defaultWidth),
     height: read(`pdfweld-pane:${id}:height`, initialHeight),
@@ -65,14 +67,19 @@ export function ResizablePane({
             minWidth,
             Math.min(
               maxWidth,
-              (root.current?.parentElement?.clientWidth || innerWidth) -
-                reserve,
+              (root.current?.parentElement?.clientWidth ||
+                (typeof innerWidth === "number" ? innerWidth : 1440)) - reserve,
             ),
           ),
         }
       : {
-          min: Math.min(200, innerHeight * 0.5),
-          max: Math.floor(innerHeight * 0.88),
+          min: Math.min(
+            200,
+            (typeof innerHeight === "number" ? innerHeight : 800) * 0.5,
+          ),
+          max: Math.floor(
+            (typeof innerHeight === "number" ? innerHeight : 800) * 0.88,
+          ),
         };
   const apply = (axis: "width" | "height", next: number) => {
     const bounds = limits(axis),

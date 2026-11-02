@@ -53,7 +53,7 @@ test("pane dividers reach both edges, section headings breathe, and cards fit th
       0,
     );
     const cards = await tools
-      .getByRole("button", { name: /^Start / })
+      .getByRole("link", { name: /^Start / })
       .evaluateAll((nodes) =>
         nodes.map((el) => {
           const copy = el.querySelector("strong + span")!;
@@ -95,7 +95,7 @@ test("catalogue controls stay available while browsing and filters fit a 320px s
   const search = catalogue.getByLabel("Search home tools");
   const y = (await search.boundingBox())!.y;
   await catalogue
-    .getByRole("button", { name: "Start Crop PDF", exact: true })
+    .getByRole("link", { name: "Start Crop PDF", exact: true })
     .scrollIntoViewIfNeeded();
   await expect(search).toBeInViewport();
   expect((await search.boundingBox())!.y).toBe(y);
@@ -107,13 +107,11 @@ test("catalogue controls stay available while browsing and filters fit a 320px s
   await categories
     .getByRole("button", { name: "Inspect", exact: true })
     .click();
-  await expect(catalogue.getByRole("button", { name: /^Start / })).toHaveCount(
-    1,
-  );
+  await expect(catalogue.getByRole("link", { name: /^Start / })).toHaveCount(1);
   await categories.getByRole("button", { name: "All", exact: true }).click();
   await search.fill("compress");
   await expect(
-    catalogue.getByRole("button", { name: "Start Compress PDF", exact: true }),
+    catalogue.getByRole("link", { name: "Start Compress PDF", exact: true }),
   ).toBeInViewport();
   await noOverflow(page);
   await page.screenshot({
@@ -127,7 +125,7 @@ test("tool options have one consistent gap after the heading", async ({
 }, info) => {
   await openHome(page);
   await page
-    .getByRole("button", { name: "Start Combine files", exact: true })
+    .getByRole("link", { name: "Start Combine files", exact: true })
     .click();
   const task = page.getByTestId("tool-workspace");
   await edges(task, task.locator("header"));

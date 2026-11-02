@@ -45,9 +45,13 @@ for (const name of [
   "public/field-notes-cover.png",
   "public/benchmark-100-pages.pdf",
   "public/benchmark-scans.pdf",
+  "public/social-card.svg",
+  "public/social-card.png",
 ])
   files[name] = new Uint8Array(readFileSync(name));
 // Retain the licenses of shipped dependencies, including transitive packages.
+if (existsSync("public/CNAME"))
+  files["public/CNAME"] = new Uint8Array(readFileSync("public/CNAME"));
 const collectLicenses = (directory) => {
   if (!existsSync(directory)) return;
   for (const entry of readdirSync(directory, { withFileTypes: true })) {

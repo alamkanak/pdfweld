@@ -44,7 +44,7 @@ export async function benchmarkHomeTools(page, profile, errors = []) {
         .getByRole("button", { name: "All tools", exact: true })
         .click();
     await page
-      .getByRole("button", { name: `Start ${task.label}`, exact: true })
+      .getByRole("link", { name: `Start ${task.label}`, exact: true })
       .click();
     await page.evaluate(() => window.pdfweld.metrics.start());
     await delay(650);

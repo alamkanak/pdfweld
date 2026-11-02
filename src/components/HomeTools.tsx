@@ -4,12 +4,15 @@ import { homeTools, recommendedTools, type HomeTool } from "../lib/home-tools";
 import { startHomeTool } from "../lib/actions";
 import { Button, SearchField, NavigationButton, Empty } from "./ui";
 import { PaneToolbar, PaneSectionHeader } from "./PaneLayout";
+import { followTool } from "../seo/PublicContent";
+import { toolPath } from "../seo/pages";
 
 export function HomeToolCard({ tool }: { tool: HomeTool }) {
   return (
-    <button
+    <a
       aria-label={`Start ${tool.label}`}
-      onClick={() => startHomeTool(tool.id)}
+      href={toolPath(tool.id)}
+      onClick={(event) => followTool(event, tool.id, startHomeTool)}
       className="group flex items-start gap-3 rounded-lg border border-white/10 bg-white/[.02] p-3 text-left outline-none hover:border-lime-400/30 hover:bg-white/[.04] focus-visible:ring-2 focus-visible:ring-lime-300"
     >
       <tool.icon
@@ -25,7 +28,7 @@ export function HomeToolCard({ tool }: { tool: HomeTool }) {
           {tool.description}
         </span>
       </span>
-    </button>
+    </a>
   );
 }
 export function RecommendedTools({ onAll }: { onAll: () => void }) {

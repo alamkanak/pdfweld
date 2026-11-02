@@ -10,16 +10,14 @@ async function home(page: Page) {
 async function choose(page: Page, label: string) {
   if (
     !(await page
-      .getByRole("button", { name: `Start ${label}`, exact: true })
+      .getByRole("link", { name: `Start ${label}`, exact: true })
       .isVisible())
   )
     await page
       .getByRole("navigation", { name: "Library navigation" })
       .getByRole("button", { name: "All tools", exact: true })
       .click();
-  await page
-    .getByRole("button", { name: `Start ${label}`, exact: true })
-    .click();
+  await page.getByRole("link", { name: `Start ${label}`, exact: true }).click();
   await expect(page.getByTestId("tool-workspace")).toBeVisible();
 }
 async function upload(
@@ -100,14 +98,14 @@ test("home presents real tools, a searchable catalogue, and responsive task layo
     .getByRole("button", { name: "All tools", exact: true })
     .click();
   await expect(
-    page.getByTestId("home-tools").getByRole("button", { name: /^Start / }),
+    page.getByTestId("home-tools").getByRole("link", { name: /^Start / }),
   ).toHaveCount(21);
   await page.getByLabel("Search home tools").fill("split");
   await expect(
-    page.getByTestId("home-tools").getByRole("button", { name: /^Start / }),
+    page.getByTestId("home-tools").getByRole("link", { name: /^Start / }),
   ).toHaveCount(1);
   await page
-    .getByRole("button", { name: "Start Split PDF", exact: true })
+    .getByRole("link", { name: "Start Split PDF", exact: true })
     .click();
   await noEditor(page);
   await fits(page);

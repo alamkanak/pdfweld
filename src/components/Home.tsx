@@ -23,6 +23,8 @@ import { library } from "../lib/files";
 import { imagesToPDF, newDocument, startHomeTool } from "../lib/actions";
 import { HomeTools, RecommendedTools } from "./HomeTools";
 import { ToolWorkspace } from "./ToolWorkspace";
+import type { HomeToolId } from "../lib/home-tools";
+import { PublicOverview } from "../seo/PublicContent";
 import {
   thumbnails,
   thumbnailBlob,
@@ -184,12 +186,13 @@ function DocumentCard({
   );
 }
 
-export function Home() {
+export function Home({ staticTool }: { staticTool?: HomeToolId | null } = {}) {
   const s = useApp.getState();
   const [files, setFiles] = useState<RecentFile[]>([]);
   const [filter, setFilter] = useState("");
   const [tab, setTab] = useState<"home" | "tools" | "all" | "recent">("home");
-  const homeTool = useApp((state) => state.homeTool);
+  const selectedTool = useApp((state) => state.homeTool);
+  const homeTool = staticTool === undefined ? selectedTool : staticTool;
   const [drag, setDrag] = useState(false);
   const [about, setAbout] = useState(false);
   const desktop = useMediaQuery("(min-width: 768px)");
@@ -324,6 +327,10 @@ export function Home() {
       }}
       onDrop={(e) => void drop(e)}
     >
+      <div className="hidden shrink-0 border-b border-white/10 p-3 text-sm text-studio-200 [.no-js_&]:block">
+        Enable JavaScript to process PDFs. Tool guides and navigation are still
+        available without it.
+      </div>
       <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 sm:px-4">
         <Logo />
         <nav aria-label="Studio actions" className="flex items-center gap-1">
@@ -653,6 +660,7 @@ export function Home() {
                   </Empty>
                 )}
               </section>
+              <PublicOverview onNavigate={startHomeTool} />
               <footer className="flex items-center gap-2 border-t border-white/10 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 text-xs text-studio-400 md:hidden">
                 <LockKeyhole size={14} />
                 Your files stay on this device.

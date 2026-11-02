@@ -32,7 +32,31 @@ npm run deploy -- https://github.com/YOUR-NAME/YOUR-REPO.git
 
 This builds the static application, publishes `dist/` to `gh-pages`, and, when GitHub CLI is installed and signed in, configures Pages to serve that branch. Without GitHub CLI, select **Settings → Pages → Deploy from a branch → gh-pages / root** once. Repository creation, authentication, and permission to enable Pages are one-time prerequisites. The script does not create repositories or change access policies.
 
-A separate `.github/workflows/pages.yml` supports deployment through GitHub Actions. Choose one deployment method; branch publishing and the Pages Actions source setting should not be mixed. All asset paths are relative, so both `username.github.io/repository/` and a custom domain work.
+Deployment builds on your computer and publishes a branch; no repository workflow or separate backend is required. GitHub performs the final Pages publishing step internally. Asset paths and public URLs are generated for the actual project subpath or custom domain.
+
+## SEO and public URLs
+
+Production builds prerender the actual Home screen and all 21 tool workspaces into static HTML. For example, `/pdfweld/tools/compress-pdf/` opens Compress PDF directly and survives reloads on GitHub Pages. Tool cards and the public tool directory use real links. Each page has a unique title, description, absolute canonical URL, Open Graph/Twitter preview, and WebApplication/WebPage JSON-LD; tool pages also include breadcrumbs and readable instructions. There are no invented ratings or reviews.
+
+The build generates `sitemap.xml`, `robots.txt`, a branded 1200×630 PNG preview, `.nojekyll`, and a real `404.html` with `noindex`. The preview image is checked into the source; `npm run seo:card` optionally regenerates it using the test Chromium browser. No browser binary is required to build or deploy the site. Unknown paths retain HTTP 404 rather than redirecting to a successful Home page. The PWA's offline navigation fallback only covers known public routes.
+
+The public site URL is resolved from `SITE_URL`, `public/CNAME`, the deployment repository, or the GitHub origin. With this repository's origin the default is `https://alamkanak.github.io/pdfweld/`. User/organization repositories named `OWNER.github.io` use `/`. Forks derive their own owner and repository automatically. If no public URL can be determined, the build uses `noindex` and omits canonical URLs and the sitemap instead of publishing made-up URLs.
+
+For a custom domain, put the production URL in `.env.local` (ignored by Git), then use the same deploy command:
+
+```dotenv
+SITE_URL=https://pdf.example.com/
+# Optional: the token from Search Console's HTML-tag verification method
+# GOOGLE_SITE_VERIFICATION=paste-your-verification-token
+```
+
+Root custom-domain builds include `CNAME`. DNS and the custom domain must also be configured in GitHub Pages settings. When GitHub CLI is available, deployment preserves a custom domain already configured in Pages settings even if its CNAME was added only to the published branch. Explicit local configuration takes precedence. `SITE_URL` must be HTTPS with no query, fragment, credentials, or port.
+
+After publishing, verify the site in Google Search Console and submit `https://alamkanak.github.io/pdfweld/sitemap.xml` (or your own deployment's sitemap URL). A project site's `/pdfweld/robots.txt` is **not** the authoritative robots file for `alamkanak.github.io`; crawlers read `/robots.txt` at the host root. Submit the project sitemap directly, or add its Sitemap line to the host-root robots file in the `OWNER.github.io` repository if you control it. See [Google's sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap) and [robots.txt location rules](https://developers.google.com/crawling/docs/robots-txt/create-robots-txt).
+
+Document filenames and contents never enter URLs, social metadata, JSON-LD, or the sitemap. An open document uses generic `noindex` workspace metadata; returning to Home restores public metadata. Prerendering never reads the browser's private library. SEO metadata does not update during drawing, page rendering, or annotation commits. Search engines decide whether and when to index pages.
+
+`npm run test:seo` checks initial HTML, metadata, all tool URLs, browser history, no-JavaScript readability, private-document metadata, the sitemap, the PNG preview, and offline deep links. `npm run verify:deploy` serves `dist/` as a GitHub Pages-style static host and verifies all public paths, assets, and real 404 behavior. Use `node scripts/verify-deploy.mjs --dir=OTHER_BUILD_DIRECTORY` for a custom-domain build.
 
 ## Working features
 
@@ -125,7 +149,7 @@ Use real phones for final validation of stylus behavior, memory pressure, keyboa
 npm test
 ```
 
-Runs engine round-trip tests, a production build, installs the test browser binaries if needed, and runs the browser suite. `npm run test:unit`, `npm run test:e2e`, and `npm run check` are available separately. CI runs all three browser engines on Linux. `npm run verify:deploy` also checks a production build under a GitHub Pages-style `/pdfweld/` subpath. The UI tests include desktop/phone flows, annotations, undo/redo, real PDF downloads, form round trips, search/organization, offline reopening, certificate signing on all desktop engines, and one full local OCR pipeline. Independent CMS verification uses OpenSSL when available. The bundled P12 certificate is a public synthetic test fixture (password `pdfweld-test`), never a production signing identity. External processing requests are checked in those flows.
+Runs engine round-trip tests, a production build, installs the test browser binaries if needed, and runs the browser suite. `npm run test:unit`, `npm run test:e2e`, and `npm run check` are available separately. The suite covers Chromium, Firefox, and WebKit across desktop and mobile profiles; no CI workflow is required. `npm run verify:deploy` also checks a production build under a GitHub Pages-style `/pdfweld/` subpath. The UI tests include desktop/phone flows, annotations, undo/redo, real PDF downloads, form round trips, search/organization, offline reopening, certificate signing on all desktop engines, and one full local OCR pipeline. Independent CMS verification uses OpenSSL when available. The bundled P12 certificate is a public synthetic test fixture (password `pdfweld-test`), never a production signing identity. External processing requests are checked in those flows.
 
 On macOS 27, Playwright's Firefox can fail because its default shared application-data folder is OS-protected (upstream issue microsoft/playwright#42768). The test/benchmark launch helper gives only the disposable test browser a private app-data home. It does not request Full Disk Access, read a personal Firefox profile, or alter browser security settings.
 

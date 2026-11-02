@@ -8,3 +8,5 @@ playwright-report/
 .cache/
 test-results-*/
 *.tsbuildinfo
+.env.local
+.env.*.local

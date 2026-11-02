@@ -1,0 +1,48 @@
+{
+  "created": "2026-11-02T17:29:43.055Z",
+  "site": "https://alamkanak.github.io/pdfweld/",
+  "staticPages": 22,
+  "checks": {
+    "typecheck": "passed",
+    "unitTests": {
+      "passed": 64
+    },
+    "fullBrowserSuite": {
+      "passed": 194,
+      "skipped": 21
+    },
+    "finalSeoDesignAndSpacing": {
+      "passed": 63,
+      "skipped": 2
+    },
+    "hosting": {
+      "projectSubpath": {
+        "base": "/pdfweld/",
+        "routes": 22,
+        "result": "passed"
+      },
+      "customDomainRoot": {
+        "base": "/",
+        "routes": 22,
+        "result": "passed"
+      },
+      "checks": [
+        "initial HTML",
+        "canonical URLs",
+        "public links and assets",
+        "sitemap",
+        "real HTTP 404 with noindex",
+        "WASM loading",
+        "PDF/image combining"
+      ]
+    },
+    "performance": {
+      "report": "seo-performance.json",
+      "cases": 6,
+      "allBudgetsPassed": true,
+      "note": "Headless desktop Chromium on this host; about 60 FPS. This does not establish 120 FPS or physical-phone performance."
+    }
+  },
+  "deployment": "Verified locally only; no GitHub push or Pages publication performed.",
+  "manualFollowUp": "After deployment, verify the URL-prefix property and submit the sitemap in Search Console. A project-subdirectory robots.txt is not authoritative for the host."
+}
