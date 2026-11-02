@@ -1,0 +1,28 @@
+{
+  "url": "https://alamkanak.github.io/pdfweld/",
+  "base": "/pdfweld/",
+  "paths": [
+    "/pdfweld/",
+    "/pdfweld/tools/edit-pdf/",
+    "/pdfweld/tools/compress-pdf/",
+    "/pdfweld/tools/combine-pdf/",
+    "/pdfweld/tools/fill-and-sign-pdf/",
+    "/pdfweld/tools/organize-pdf/",
+    "/pdfweld/tools/images-to-pdf/",
+    "/pdfweld/tools/split-pdf/",
+    "/pdfweld/tools/extract-pdf-pages/",
+    "/pdfweld/tools/rotate-pdf/",
+    "/pdfweld/tools/pdf-to-images/",
+    "/pdfweld/tools/pdf-to-text/",
+    "/pdfweld/tools/password-protect-pdf/",
+    "/pdfweld/tools/watermark-pdf/",
+    "/pdfweld/tools/add-pdf-page-numbers/",
+    "/pdfweld/tools/sanitize-pdf/",
+    "/pdfweld/tools/flatten-pdf-annotations/",
+    "/pdfweld/tools/compare-pdf/",
+    "/pdfweld/tools/digitally-sign-pdf/",
+    "/pdfweld/tools/ocr-pdf/",
+    "/pdfweld/tools/redact-pdf/",
+    "/pdfweld/tools/crop-pdf/"
+  ]
+}
