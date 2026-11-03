@@ -275,6 +275,7 @@ function Comments() {
                 </div>
                 <IconButton
                   label="Delete annotation"
+                  disabled={a.locked}
                   className="h-7 w-7"
                   onClick={() =>
                     void useApp

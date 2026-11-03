@@ -357,7 +357,7 @@ export const useApp = create<State>((set, get) => ({
     try {
       const data = await engine.call("save");
       download(data, get().info!.name);
-      await persist(data);
+      await persist(await engine.call("saveEditable"));
       set({ dirty: false, busy: "" });
       get().notify("PDF exported. A recovery copy is saved locally.");
     } catch (e) {
@@ -391,7 +391,7 @@ export async function persist(bytes?: Uint8Array) {
   if (!s.info) return;
   if (!bytes && !s.dirty) return;
   try {
-    const data = bytes || (await engine.call("save"));
+    const data = bytes || (await engine.call("saveEditable"));
     let thumbnail: Uint8Array | undefined;
     try {
       thumbnail = await engine.call("thumbnail");

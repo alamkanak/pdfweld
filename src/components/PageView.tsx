@@ -654,25 +654,6 @@ export const PageView = memo(function PageView({
               />
             </a>
           ))}
-          {details.annotations
-            .filter(
-              (a) =>
-                !a.replyTo &&
-                (a.locked || !["FreeText", "Ink", "Stamp"].includes(a.type)),
-            )
-            .map((a) => (
-              <rect
-                key={a.id}
-                x={a.rect[0]}
-                y={a.rect[1]}
-                width={Math.max(10, a.rect[2] - a.rect[0])}
-                height={Math.max(10, a.rect[3] - a.rect[1])}
-                fill="transparent"
-                className="cursor-pointer hover:fill-lime-400/10"
-                onClick={() => void editAnnotation(a.id)}
-                aria-label={`Edit ${a.type} annotation`}
-              />
-            ))}
           {/* Widget appearances are already in the PDF raster. Paint the HTML
               value only while focused, against an opaque input background. */}
           {details.fields.map((f) => (
@@ -720,9 +701,8 @@ export const PageView = memo(function PageView({
           .filter(
             (a) =>
               !a.replyTo &&
-              !a.locked &&
-              (tool !== "text" || a.type === "FreeText") &&
-              ["FreeText", "Ink", "Stamp"].includes(a.type),
+              a.type !== "Popup" &&
+              (tool !== "text" || a.type === "FreeText"),
           )
           .map((a) => (
             <AnnotationElement

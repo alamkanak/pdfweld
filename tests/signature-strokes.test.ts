@@ -79,7 +79,7 @@ test("signature strokes stay in one movable, resizable annotation through undo a
     }),
   );
   const restored = new PDFEngine();
-  restored.open(engine.save(), "Signed.pdf");
+  restored.open(engine.saveEditable(), "Recovery.pdf");
   expect(restored.details(0).annotations).toHaveLength(1);
   expect(ink(restored, restored.details(0).annotations[0].id)).toEqual(scaled);
   engine.addMark({

@@ -347,7 +347,12 @@ test("comments keep their editor while annotation colors stay in the shared appe
       author: "Test",
     }),
   );
-  await page.getByLabel("Edit Text annotation", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Select comment", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Style comment", exact: true })
+    .click();
   const comment = page.getByRole("dialog", {
     name: "Edit comment",
     exact: true,

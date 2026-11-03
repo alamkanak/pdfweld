@@ -130,6 +130,10 @@ function SignaturePicker({ onClose }: { onClose: () => void }) {
         PNG or JPEG. Transparent PNG backgrounds are preserved. Tap to place, or
         drag to set the size; proportions stay unchanged.
       </p>
+      <p className="mt-2 text-xs leading-6 text-studio-400">
+        Signatures become part of the page when you export. Your local working
+        copy stays editable.
+      </p>
     </Modal>
   );
 }

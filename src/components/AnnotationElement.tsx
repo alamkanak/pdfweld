@@ -25,7 +25,25 @@ export function annotationLabel(a: AnnotationInfo) {
       ? "drawn signature or ink"
       : a.text === "Signature"
         ? "signature"
-        : "image or stamp";
+        : a.type === "Stamp"
+          ? "image or stamp"
+          : (
+              {
+                Highlight: "highlight",
+                StrikeOut: "strikethrough",
+                Underline: "underline",
+                Squiggly: "squiggly underline",
+                Text: "comment",
+                Square: "rectangle",
+                Circle: "ellipse",
+                Line: "line",
+                Redact: "redaction",
+                Polygon: "polygon",
+                PolyLine: "polyline",
+                Caret: "caret",
+                FileAttachment: "attachment",
+              } as Record<string, string>
+            )[a.type] || `${a.type} annotation`;
 }
 
 /** A single compositor preview during a gesture; one PDF operation on release. */
@@ -57,6 +75,12 @@ export function AnnotationElement({
   const root = useRef<HTMLDivElement>(null),
     preview = useRef<HTMLCanvasElement>(null);
   const documentId = useApp((s) => s.id);
+  const busy = useApp((s) => !!s.busy);
+  const movable = !a.locked && ["FreeText", "Ink", "Stamp"].includes(a.type);
+  const select = () => {
+    useApp.setState({ selectedAnnotation: { page, id: a.id }, page });
+    root.current?.focus({ preventScroll: true });
+  };
   const rect = a.rect;
   const { begin, phase, cancel, canEdit } = useElementGesture({
     root,
@@ -112,6 +136,7 @@ export function AnnotationElement({
     };
   }, [selected, page, a.id, scale, revision]);
   const remove = async () => {
+    if (a.locked || useApp.getState().busy) return;
     await useApp.getState().act({ type: "annotation-delete", page, id: a.id });
     useApp.setState({ selectedAnnotation: null });
   };
@@ -131,10 +156,11 @@ export function AnnotationElement({
         data-annotation={a.id}
         role="button"
         tabIndex={0}
-        aria-label={`Move ${label}`}
+        aria-label={`${movable ? "Move" : "Select"} ${label}`}
         aria-pressed={selected}
         className={clsx(
-          "absolute touch-none select-none cursor-move outline-none focus-visible:ring-2 focus-visible:ring-lime-500",
+          "absolute touch-none select-none outline-none focus-visible:ring-2 focus-visible:ring-lime-500",
+          movable ? "cursor-move" : "cursor-pointer",
           editing && "invisible",
           selected
             ? "z-20 outline outline-1 outline-lime-500 ring-1 ring-lime-500/30"
@@ -146,14 +172,22 @@ export function AnnotationElement({
           width: (rect[2] - rect[0]) * scale,
           height: (rect[3] - rect[1]) * scale,
         }}
-        onPointerDown={(e) => begin(e, "move")}
+        onPointerDown={(e) => {
+          if (movable) begin(e, "move");
+          else {
+            e.preventDefault();
+            e.stopPropagation();
+            select();
+          }
+        }}
         onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={() => {
-          if (canEdit() && !useApp.getState().busy) onEdit();
+          if (!a.locked && canEdit() && !useApp.getState().busy) onEdit();
         }}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
           if (
+            movable &&
             ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
           ) {
             e.preventDefault();
@@ -195,7 +229,7 @@ export function AnnotationElement({
             e.preventDefault();
             e.stopPropagation();
             useApp.setState({ selectedAnnotation: { page, id: a.id } });
-            if (e.key === "Enter") onEdit();
+            if (e.key === "Enter" && !a.locked) onEdit();
           } else if (e.key === "Delete" || e.key === "Backspace") {
             e.preventDefault();
             e.stopPropagation();
@@ -244,16 +278,23 @@ export function AnnotationElement({
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                aria-label={`Drag ${label}`}
-                className="flex h-10 touch-none cursor-move items-center gap-2 rounded-lg px-2 text-xs text-studio-400 hover:bg-white/5 focus-visible:outline focus-visible:outline-lime-300"
-                onPointerDown={(event) => begin(event, "move")}
-              >
-                <Move size={15} />
-                Drag to move
-              </button>
-              {a.type === "FreeText" && (
+              {movable && (
+                <button
+                  type="button"
+                  aria-label={`Drag ${label}`}
+                  className="flex h-10 touch-none cursor-move items-center gap-2 rounded-lg px-2 text-xs text-studio-400 hover:bg-white/5 focus-visible:outline focus-visible:outline-lime-300"
+                  onPointerDown={(event) => begin(event, "move")}
+                >
+                  <Move size={15} />
+                  Drag to move
+                </button>
+              )}
+              {!movable && (
+                <span className="px-2 text-xs text-studio-300">
+                  {a.locked ? "Locked annotation" : label}
+                </span>
+              )}
+              {a.type === "FreeText" && !a.locked && (
                 <IconButton
                   label="Text size and color"
                   onClick={() => useApp.setState({ appearanceOpen: true })}
@@ -261,34 +302,39 @@ export function AnnotationElement({
                   <Type size={16} />
                 </IconButton>
               )}
-              <IconButton
-                label={
-                  a.type === "FreeText" ? `Edit ${label}` : `Style ${label}`
-                }
-                onClick={onEdit}
-              >
-                {a.type === "FreeText" ? (
-                  <Pencil size={15} />
-                ) : (
-                  <SlidersHorizontal size={15} />
-                )}
-              </IconButton>
+              {!a.locked && (
+                <IconButton
+                  label={
+                    a.type === "FreeText" ? `Edit ${label}` : `Style ${label}`
+                  }
+                  onClick={onEdit}
+                >
+                  {a.type === "FreeText" ? (
+                    <Pencil size={15} />
+                  ) : (
+                    <SlidersHorizontal size={15} />
+                  )}
+                </IconButton>
+              )}
               <IconButton
                 label={`Delete ${label}`}
+                disabled={a.locked || busy}
                 onClick={() => void remove()}
               >
                 <Trash2 size={15} />
               </IconButton>
             </div>
-            <button
-              type="button"
-              aria-label={`Resize ${label}`}
-              title="Drag to resize"
-              className="absolute -bottom-3 -right-3 flex h-7 w-7 touch-none cursor-nwse-resize items-center justify-center rounded-lg border border-lime-600 bg-lime-400 text-studio-950 shadow-sm"
-              onPointerDown={(e) => begin(e, "resize")}
-            >
-              <Grip size={14} />
-            </button>
+            {movable && (
+              <button
+                type="button"
+                aria-label={`Resize ${label}`}
+                title="Drag to resize"
+                className="absolute -bottom-3 -right-3 flex h-7 w-7 touch-none cursor-nwse-resize items-center justify-center rounded-lg border border-lime-600 bg-lime-400 text-studio-950 shadow-sm"
+                onPointerDown={(e) => begin(e, "resize")}
+              >
+                <Grip size={14} />
+              </button>
+            )}
           </>
         )}
       </div>

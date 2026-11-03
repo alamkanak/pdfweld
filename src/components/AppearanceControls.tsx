@@ -39,7 +39,8 @@ export function AppearanceControls() {
     annotation?.type === "FreeText" ||
     (!selected && ["text", "replace"].includes(tool));
   const isImage = annotation?.type === "Stamp";
-  const disabled = busy || (!!selected && !draft && !annotation);
+  const disabled =
+    busy || !!annotation?.locked || (!!selected && !draft && !annotation);
   const currentColor =
     draft?.color || (annotation ? annotationColor(annotation) : color);
   const currentSize =

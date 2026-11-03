@@ -79,7 +79,7 @@ describe("PDF engine round trips", () => {
     );
     const restored = new PDFEngine();
     restored.open(engine.save(), "Signed.pdf");
-    expect(restored.details(0).annotations[0].text).toBe("Signature");
+    expect(restored.details(0).annotations).toHaveLength(0);
     const rendered = restored.render(0, 1);
     const pixel = (x: number, y: number) =>
       Array.from(
@@ -113,10 +113,10 @@ describe("PDF engine round trips", () => {
     "redact",
     "stamp",
     "signature",
-  ] as Tool[])("saves %s as a real PDF annotation", (tool) => {
+  ] as Tool[])("keeps %s editable in a recovery snapshot", (tool) => {
     engine.addMark(mark(tool));
     const restored = new PDFEngine();
-    restored.open(engine.save(), "Saved.pdf");
+    restored.open(engine.saveEditable(), "Saved.pdf");
     expect(restored.details(0).annotations.length).toBe(1);
     expect(restored.info().pages).toHaveLength(4);
   });

@@ -103,11 +103,8 @@ test.each(["text", "image", "signature"] as Tool[])(
       }
     expect(oldInk).toBe(0);
     expect(newInk).toBeGreaterThan(100);
-    const preview = saved.renderAnnotation(
-      0,
-      saved.details(0).annotations[0].id,
-      20,
-    );
+    expect(saved.details(0).annotations).toHaveLength(tool === "text" ? 1 : 0);
+    const preview = engine.renderAnnotation(0, original.id, 20);
     expect(preview.width * preview.height).toBeLessThan(2_510_000);
     expect(preview.pixels[3]).toBe(0);
     expect(preview.pixels.some((v, i) => i % 4 === 3 && v > 0)).toBe(true);

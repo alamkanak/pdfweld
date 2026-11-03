@@ -116,16 +116,21 @@ for (const tool of ["text", "image", "signature"] as Tool[]) {
         return {
           old: count(before),
           moved: count(moved),
-          rect: (await window.pdfweld.engine.call("details", 0)).annotations[0]
-            .rect,
+          annotations: (await window.pdfweld.engine.call("details", 0))
+            .annotations,
         };
       },
       { before, moved },
     );
     expect(visual.old).toBe(0);
     expect(visual.moved).toBeGreaterThan(80);
-    visual.rect.forEach((v, i) => expect(v).toBeCloseTo(moved[i], 2));
-    await element.click();
+    expect(visual.annotations).toHaveLength(tool === "text" ? 1 : 0);
+    if (tool === "text") {
+      visual.annotations[0].rect.forEach((v, i) =>
+        expect(v).toBeCloseTo(moved[i], 2),
+      );
+      await element.click();
+    }
     await page.screenshot({
       path: `test-results/${testInfo.project.name}-move-${tool}.png`,
     });
@@ -138,10 +143,18 @@ test("selection supports keyboard movement, resizing, and editing", async ({
   const element = await prepare(page, "image");
   await element.click();
   const before = await currentRect(page);
+  const originalBox = (await element.boundingBox())!;
+  const factor =
+    (await page.locator('[data-page="0"]').boundingBox())!.width / 595;
   await element.press("Shift+ArrowRight");
   await expect
     .poll(async () => (await currentRect(page))[0])
     .toBeCloseTo(before[0] + 10, 2);
+  // The worker commit can complete before the new page raster and overlay
+  // are displayed. Target the handle after it reaches the visible position.
+  await expect
+    .poll(async () => (await element.boundingBox())!.x)
+    .toBeCloseTo(originalBox.x + 10 * factor, 1);
   const handle = page.getByRole("button", {
     name: "Resize signature",
     exact: true,

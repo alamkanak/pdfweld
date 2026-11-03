@@ -163,10 +163,6 @@ test("signature chooser uploads an image with its proportions and keeps drawing 
       ),
     )
     .toBe(1);
-  await page.evaluate(async () => {
-    const bytes = await window.pdfweld.engine.call("save");
-    await window.pdfweld.state().open(bytes, "Image signature.pdf");
-  });
   const saved = await inspectAnnotation(page);
   expect(saved.type).toBe("Stamp");
   expect(saved.text).toBe("Signature");
@@ -177,6 +173,15 @@ test("signature chooser uploads an image with its proportions and keeps drawing 
   await page.screenshot({
     path: `test-results/${testInfo.project.name}-image-signature.png`,
   });
+  await page.evaluate(async () => {
+    const bytes = await window.pdfweld.engine.call("save");
+    await window.pdfweld.state().open(bytes, "Image signature.pdf");
+  });
+  expect(
+    await page.evaluate(
+      async () => (await window.pdfweld.engine.call("details", 0)).annotations,
+    ),
+  ).toHaveLength(0);
   const drawing = await chooseSignature(page);
   await drawing
     .getByRole("button", { name: "Draw signature", exact: true })
@@ -205,7 +210,7 @@ test("signature chooser uploads an image with its proportions and keeps drawing 
         ),
       ),
     )
-    .toEqual(["Stamp", "Ink"]);
+    .toEqual(["Ink"]);
 });
 
 test("pen signature keeps separate strokes together until Done and starts a new signature next time", async ({

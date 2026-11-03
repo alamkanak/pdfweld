@@ -1,5 +1,6 @@
 import mupdf from "mupdf";
 import { parsePages } from "./page-ranges";
+import { burnSignatures, normalizeImageAppearances } from "./pdf-signatures";
 import {
   inspectTaskFile,
   executeTask,
@@ -461,6 +462,11 @@ export class PDFEngine {
         if (!existing) a.setCreationDate(new Date());
         a.setModificationDate(new Date());
         a.setContents(m.tool === "signature" ? "Signature" : m.text || "");
+        if (
+          m.tool === "signature" ||
+          (m.tool === "image" && m.text === "Signature")
+        )
+          a.getObject().put("PDFWeldSignature", true);
         if (m.tool === "signature" && m.signatureGroup)
           a.getObject().put(
             "PDFWeldSignatureGroup",
@@ -514,7 +520,11 @@ export class PDFEngine {
           if (m.image) {
             const image = new mupdf.Image(m.image);
             try {
-              a.setStampImage(image);
+              // Square, unit-sized stamp appearances are squeezed by PDFKit.
+              // Use the actual PDF rectangle and counter the page rotation so
+              // the image matches the editor in every PDF renderer.
+              a.getObject().put("PDFWeldImage", true);
+              this.imageAppearance(p, a, d.addImage(image));
             } finally {
               image.destroy();
             }
@@ -523,6 +533,40 @@ export class PDFEngine {
         a.update();
         p.update();
       }),
+    );
+  }
+  private imageAppearance(
+    page: PDFPage,
+    annotation: PDFAnnotation,
+    image?: PDFObject,
+  ) {
+    if (!annotation.getObject().get("PDFWeldImage").asBoolean()) return;
+    const resources = annotation
+      .getObject()
+      .get("AP", "N", "Resources", "XObject");
+    image ||= resources.get("Image");
+    if (image.isNull()) image = resources.get("I");
+    if (image.isNull()) return;
+    const raw = annotation.getObject().get("Rect").asJS() as Rect;
+    const rect = annotation.getRect(),
+      inverse = mupdf.Matrix.invert(page.getTransform());
+    const w = rect[2] - rect[0],
+      h = rect[3] - rect[1];
+    const matrix = [
+      inverse[0] * w,
+      inverse[1] * w,
+      -inverse[2] * h,
+      -inverse[3] * h,
+      rect[0] * inverse[0] + rect[3] * inverse[2] + inverse[4] - raw[0],
+      rect[0] * inverse[1] + rect[3] * inverse[3] + inverse[5] - raw[1],
+    ];
+    annotation.setAppearance(
+      null,
+      null,
+      mupdf.Matrix.identity,
+      [0, 0, raw[2] - raw[0], raw[3] - raw[1]],
+      { XObject: { Image: image } },
+      `q ${matrix.join(" ")} cm /Image Do Q\n`,
     );
   }
   private createField(p: PDFPage, rect: Rect, name: string) {
@@ -598,7 +642,7 @@ export class PDFEngine {
           this.geometry = null;
           break;
         case "duplicate": {
-          const clone = new mupdf.PDFDocument(this.save());
+          const clone = new mupdf.PDFDocument(this.saveEditable());
           try {
             for (const i of [...indices].sort((a, b) => b - a))
               copyPages(d, clone, [i], i + 1);
@@ -644,7 +688,15 @@ export class PDFEngine {
             const a = p
               .getAnnotations()
               .find((a) => a.getObject().asIndirect() === op.id);
-            if (a) p.deleteAnnotation(a);
+            if (a) {
+              if (
+                a.getFlags() &
+                (mupdf.PDFAnnotation.IS_LOCKED |
+                  mupdf.PDFAnnotation.IS_READ_ONLY)
+              )
+                throw new Error("This annotation is locked.");
+              p.deleteAnnotation(a);
+            }
             p.update();
           });
           break;
@@ -706,6 +758,9 @@ export class PDFEngine {
             a.setModificationDate(new Date());
             a.update();
             p.update();
+            // MuPDF regenerates image-stamp appearances when geometry changes.
+            // Restore a proportioned appearance after that regeneration.
+            this.imageAppearance(p, a);
           });
           break;
         case "annotation-style":
@@ -748,6 +803,7 @@ export class PDFEngine {
             a.setModificationDate(new Date());
             a.update();
             p.update();
+            this.imageAppearance(p, a);
           });
           break;
         case "annotation-edit":
@@ -898,7 +954,13 @@ export class PDFEngine {
       }
     });
   }
-  save(options: Record<string, string | number> = {}): Uint8Array {
+  saveEditable(): Uint8Array {
+    return this.save({}, false);
+  }
+  save(
+    options: Record<string, string | number> = {},
+    signatures = true,
+  ): Uint8Array {
     if (
       this.originalSigned &&
       !this.edited &&
@@ -915,6 +977,8 @@ export class PDFEngine {
     try {
       if (output.needsPassword() && !output.authenticatePassword(this.password))
         throw new Error("The encrypted export snapshot could not be unlocked.");
+      normalizeImageAppearances(output);
+      if (signatures) burnSignatures(output);
       return bytes(
         output.saveToBuffer({ garbage: 4, compress: true, ...options }),
       );
@@ -976,6 +1040,8 @@ export class PDFEngine {
         out,
         mappedBookmarks(this.require().loadOutline() || [], indices),
       );
+      normalizeImageAppearances(out);
+      burnSignatures(out);
       return bytes(out.saveToBuffer({ garbage: 4, compress: true }));
     } finally {
       out.destroy();
