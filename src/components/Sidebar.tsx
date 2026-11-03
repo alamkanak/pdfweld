@@ -39,6 +39,7 @@ import {
 } from "./ui";
 import clsx from "clsx";
 import { ResizablePane } from "./ResizablePane";
+import { editText } from "../lib/text-editing";
 const titles = {
   pages: "Pages",
   outline: "Bookmarks",
@@ -304,6 +305,12 @@ function Comments() {
                 <button
                   className="text-xs text-studio-600 hover:text-lime-300"
                   onClick={async () => {
+                    if (a.type === "FreeText") {
+                      goToPage(page);
+                      editText(page, a);
+                      if (innerWidth < 768) useApp.setState({ panel: null });
+                      return;
+                    }
                     const answer = await ask({
                       title: "Edit comment",
                       fields: [

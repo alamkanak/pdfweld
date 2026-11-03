@@ -1,7 +1,18 @@
 import { PDFEngine } from "../lib/engine";
+import { ensureTextFont } from "../lib/text-font";
 const engine = new PDFEngine();
 self.onmessage = async ({ data: { id, method, args } }) => {
   try {
+    if (
+      (method === "addMark" && ["text", "replace"].includes(args[0]?.tool)) ||
+      (method === "action" &&
+        [
+          "annotation-style",
+          "annotation-edit",
+          "annotation-transform",
+        ].includes(args[0]?.type))
+    )
+      await ensureTextFont();
     const fn = (
       engine as unknown as Record<string, (...args: unknown[]) => unknown>
     )[method];

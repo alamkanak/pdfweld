@@ -10,6 +10,7 @@ import type {
   Operation,
   Panel,
   Tool,
+  TextDraft,
 } from "./types";
 export interface PromptField {
   key: string;
@@ -42,6 +43,9 @@ interface State {
   prompt: PromptConfig | null;
   color: string;
   width: number;
+  textSize: number;
+  textDraft: TextDraft | null;
+  appearanceOpen: boolean;
   opacity: number;
   author: string;
   zoom: number;
@@ -71,6 +75,7 @@ interface State {
   update: (info: DocumentInfo) => void;
   act: (op: Operation) => Promise<void>;
   mark: (mark: Mark) => Promise<void>;
+  commitText: () => Promise<void>;
   save: () => Promise<void>;
   recover: () => Promise<void>;
   notify: (text: string) => void;
@@ -104,6 +109,9 @@ export const useApp = create<State>((set, get) => ({
   prompt: null,
   color: "#b8ce5d",
   width: 2.5,
+  textSize: 18,
+  textDraft: null,
+  appearanceOpen: false,
   opacity: 1,
   author: savedAuthor(),
   zoom: 1,
@@ -139,8 +147,12 @@ export const useApp = create<State>((set, get) => ({
       );
       return;
     }
-    // Claim the session before the first await: document switches and saves
-    // must not race against the worker's single active PDF.
+    if (get().textDraft) {
+      await get().commitText();
+      if (get().textDraft || get().busy) return;
+    }
+    // Claim the session before persistence and worker calls; a pending text
+    // draft above owns its own busy operation before handing off this open.
     set({ busy: "Preparing document…", error: "" });
     thumbnails.cancel();
     clearTimeout(autoTimer);
@@ -204,6 +216,8 @@ export const useApp = create<State>((set, get) => ({
         busy: "",
         tool: "select",
         selectedAnnotation: null,
+        textDraft: null,
+        appearanceOpen: false,
         homeTool: null,
         homeAction: null,
         workspaceMode: mode,
@@ -252,6 +266,10 @@ export const useApp = create<State>((set, get) => ({
   },
   act: async (op) => {
     if (get().busy) return;
+    if (get().textDraft) {
+      await get().commitText();
+      if (get().textDraft || get().busy) return;
+    }
     set({
       busy:
         op.type === "redact"
@@ -273,8 +291,66 @@ export const useApp = create<State>((set, get) => ({
       get().fail(e);
     }
   },
+  commitText: async () => {
+    const s = get(),
+      draft = s.textDraft;
+    if (!s.info || !draft || s.busy) return;
+    if (!draft.text.trim() && draft.id === undefined) {
+      set({ textDraft: null, selectedAnnotation: null });
+      return;
+    }
+    set({ busy: "Saving text…", error: "" });
+    try {
+      const info =
+        draft.id !== undefined
+          ? await engine.call(
+              "action",
+              !draft.text.trim()
+                ? { type: "annotation-delete", page: draft.page, id: draft.id }
+                : {
+                    type: "annotation-style",
+                    page: draft.page,
+                    id: draft.id,
+                    text: draft.text,
+                    color: draft.color,
+                    fontSize: draft.fontSize,
+                    opacity: draft.opacity,
+                    rect: draft.rect,
+                  },
+            )
+          : await engine.call("addMark", {
+              tool: draft.kind,
+              page: draft.page,
+              rect: draft.rect,
+              text: draft.text,
+              color: draft.color,
+              width: draft.fontSize,
+              opacity: draft.opacity,
+              replaceRect: draft.replaceRect,
+              author: s.author,
+            });
+      s.update(info);
+      const details = await engine.call("details", draft.page);
+      const added =
+        draft.id !== undefined
+          ? details.annotations.find((a) => a.id === draft.id)
+          : details.annotations[details.annotations.length - 1];
+      set({
+        textDraft: null,
+        busy: "",
+        tool: "select",
+        selectedAnnotation: added ? { page: draft.page, id: added.id } : null,
+      });
+    } catch (error) {
+      s.fail(error);
+    }
+  },
   save: async () => {
     if (!get().info || get().busy) return;
+    if (get().textDraft) {
+      await get().commitText();
+      if (get().textDraft || get().busy) return;
+    }
     set({ busy: "Preparing PDF…" });
     try {
       const data = await engine.call("save");

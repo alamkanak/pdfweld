@@ -167,11 +167,13 @@ test("selection supports keyboard movement, resizing, and editing", async ({
     2,
   );
   await page
-    .getByRole("button", { name: "Edit signature", exact: true })
+    .getByRole("button", { name: "Style signature", exact: true })
     .click();
   await expect(
-    page.getByRole("dialog", { name: "Edit stamp", exact: true }),
+    page.getByRole("region", { name: "Appearance", exact: true }),
   ).toBeVisible();
+  await expect(page.getByLabel("Custom color")).toHaveCount(0);
+  await expect(page.getByLabel("Opacity", { exact: true })).toBeVisible();
 });
 
 test("a finger can drag an element without scrolling the phone viewport", async ({

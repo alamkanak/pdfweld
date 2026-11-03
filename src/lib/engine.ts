@@ -229,6 +229,12 @@ export class PDFEngine {
         rect: offset(a.getBounds()),
         text: a.getContents(),
         author: a.getAuthor(),
+        fontSize:
+          a.getType() === "FreeText"
+            ? a.getDefaultAppearance().size
+            : undefined,
+        opacity: a.getOpacity(),
+        width: a.hasBorder() ? a.getBorderWidth() : undefined,
         color:
           a.getType() === "FreeText"
             ? a.getDefaultAppearance().color
@@ -390,7 +396,11 @@ export class PDFEngine {
         }
         if (m.tool === "replace") {
           const a = p.createAnnotation("Redact");
-          a.setRect(rect);
+          a.setRect(
+            m.replaceRect
+              ? (m.replaceRect.map((v, i) => v + (i % 2 ? b[1] : b[0])) as Rect)
+              : rect,
+          );
           a.update();
           p.applyRedactions(false, 0, 0, 0);
           p.update();
@@ -666,6 +676,14 @@ export class PDFEngine {
               .find((a) => a.getObject().asIndirect() === op.id);
             if (!a) throw new Error("Annotation no longer exists.");
             if (typeof op.text === "string") a.setContents(op.text);
+            if (Array.isArray(op.rect)) {
+              const b = p.getBounds();
+              a.setRect(
+                (op.rect as Rect).map(
+                  (v, i) => v + (i % 2 ? b[1] : b[0]),
+                ) as Rect,
+              );
+            }
             const freeText = a.getType() === "FreeText";
             if (typeof op.color === "string" && !freeText)
               a.setColor(rgb(op.color));

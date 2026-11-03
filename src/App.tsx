@@ -12,6 +12,7 @@ import { metrics } from "./lib/performance";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import type { Operation } from "./lib/types";
 import { installPublicNavigation } from "./seo/navigation";
+import { commitTextDraft } from "./lib/text-editing";
 declare global {
   interface Window {
     pdfweld: {
@@ -79,7 +80,9 @@ export default function App() {
       }
       if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        void s.save();
+        void commitTextDraft().then(() => {
+          if (!useApp.getState().textDraft) void useApp.getState().save();
+        });
         return;
       }
       if (mod && e.key.toLowerCase() === "k") {
@@ -109,12 +112,13 @@ export default function App() {
       }
     };
     const before = (e: BeforeUnloadEvent) => {
-      if (useApp.getState().dirty) {
+      if (useApp.getState().dirty || useApp.getState().textDraft?.text.trim()) {
         e.preventDefault();
       }
     };
     const hidden = () => {
-      if (document.visibilityState === "hidden") void persist();
+      if (document.visibilityState === "hidden")
+        void commitTextDraft().then(() => persist());
     };
     window.addEventListener("keydown", key);
     window.addEventListener("beforeunload", before);

@@ -5,13 +5,14 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Pencil, Trash2, Grip } from "lucide-react";
+import { Pencil, SlidersHorizontal, Trash2, Grip } from "lucide-react";
 import { useApp } from "../lib/store";
 import { engine } from "../lib/client";
 import { metrics } from "../lib/performance";
 import { IconButton } from "./ui";
 import type { AnnotationInfo, Rect } from "../lib/types";
 import clsx from "clsx";
+import { annotationColor } from "../lib/text-editing";
 
 export function annotationLabel(a: AnnotationInfo) {
   return a.type === "FreeText"
@@ -44,6 +45,9 @@ export function AnnotationElement({
       s.selectedAnnotation?.page === page && s.selectedAnnotation.id === a.id,
   );
   const revision = useApp((s) => s.revision);
+  const editing = useApp(
+    (s) => s.textDraft?.page === page && s.textDraft.id === a.id,
+  );
   const root = useRef<HTMLDivElement>(null),
     preview = useRef<HTMLCanvasElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -127,7 +131,15 @@ export function AnnotationElement({
     const pageRect = root
       .current!.closest("[data-page]")!
       .getBoundingClientRect();
-    useApp.setState({ selectedAnnotation: { page, id: a.id }, page });
+    useApp.setState({
+      selectedAnnotation: { page, id: a.id },
+      page,
+      color: annotationColor(a),
+      opacity: a.opacity ?? 1,
+      ...(a.type === "FreeText"
+        ? { textSize: a.fontSize || 18 }
+        : { width: a.width || 2.5 }),
+    });
     root.current?.focus({ preventScroll: true });
     e.currentTarget.setPointerCapture(e.pointerId);
     gesture.current = {
@@ -213,6 +225,7 @@ export function AnnotationElement({
       aria-pressed={selected}
       className={clsx(
         "absolute min-h-6 min-w-6 touch-none select-none cursor-move outline-none focus-visible:ring-2 focus-visible:ring-lime-500",
+        editing && "invisible",
         selected
           ? "z-20 border border-lime-500 ring-1 ring-lime-500/30"
           : "z-10 hover:ring-1 hover:ring-lime-500/60",
@@ -318,8 +331,17 @@ export function AnnotationElement({
               onPointerDown={(e) => e.stopPropagation()}
             >
               <span className="px-2 text-xs text-studio-400">Drag to move</span>
-              <IconButton label={`Edit ${label}`} onClick={onEdit}>
-                <Pencil size={15} />
+              <IconButton
+                label={
+                  a.type === "FreeText" ? `Edit ${label}` : `Style ${label}`
+                }
+                onClick={onEdit}
+              >
+                {a.type === "FreeText" ? (
+                  <Pencil size={15} />
+                ) : (
+                  <SlidersHorizontal size={15} />
+                )}
               </IconButton>
               <IconButton
                 label={`Delete ${label}`}

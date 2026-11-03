@@ -8,7 +8,15 @@ import {
 import { join } from "node:path";
 import { zipSync } from "fflate";
 const files = {};
-for (const root of ["src", "scripts", "tests", ".github", "docs", "reports"]) {
+for (const root of [
+  "src",
+  "scripts",
+  "tests",
+  ".github",
+  "docs",
+  "reports",
+  "public/fonts",
+]) {
   if (!existsSync(root)) continue;
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {

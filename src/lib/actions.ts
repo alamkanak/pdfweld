@@ -5,12 +5,15 @@ import { drawingTools } from "./tools";
 import type { Tool } from "./types";
 import { homeToolForAction, type HomeToolId } from "./home-tools";
 import { thumbnails } from "./thumbnails";
+import { commitTextDraft } from "./text-editing";
 export function startHomeTool(id: HomeToolId, action?: string) {
   if (useApp.getState().busy) return;
   thumbnails.cancel();
   useApp.setState({ homeTool: id, homeAction: action || null, dialog: null });
 }
 export async function chooseTool(tool: Tool) {
+  await commitTextDraft();
+  if (useApp.getState().textDraft) return;
   const s = useApp.getState();
   if (!s.info) {
     s.notify("Open a PDF to use the editing tools.");
@@ -127,6 +130,8 @@ export async function imagesToPDF(files?: File[]) {
   }
 }
 export async function runAction(id: string) {
+  await commitTextDraft();
+  if (useApp.getState().textDraft) return;
   const s = useApp.getState();
   if (s.busy) return;
   if (!s.info) {

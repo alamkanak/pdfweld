@@ -231,7 +231,7 @@ export function Viewer() {
   const scale = Math.max(0.1, fit) * zoom;
   const pages = layout === "single" ? [page] : info.pages.map((_, i) => i);
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-studio-950/30">
+    <div className="relative isolate flex min-w-0 flex-1 flex-col overflow-hidden bg-studio-950/30">
       <div
         ref={viewport}
         data-testid="document-viewport"

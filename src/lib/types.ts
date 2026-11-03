@@ -78,6 +78,20 @@ export interface AnnotationInfo {
   created: string;
   replyTo?: number;
   locked: boolean;
+  fontSize?: number;
+  opacity?: number;
+  width?: number;
+}
+export interface TextDraft {
+  page: number;
+  id?: number;
+  rect: Rect;
+  text: string;
+  kind: "text" | "replace";
+  color: string;
+  fontSize: number;
+  opacity: number;
+  replaceRect?: Rect;
 }
 export interface FieldInfo {
   id: number;
@@ -118,6 +132,7 @@ export interface Mark {
   author: string;
   quads?: number[][];
   image?: Uint8Array;
+  replaceRect?: Rect;
 }
 export interface RenderResult {
   pixels: Uint8ClampedArray<ArrayBuffer>;

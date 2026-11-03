@@ -129,6 +129,8 @@ export function installPublicNavigation() {
     }
     applyingLocation = true;
     try {
+      await useApp.getState().commitText();
+      if (useApp.getState().textDraft) return;
       if (useApp.getState().dirty) await persist();
       if (!disposed)
         useApp.setState({
@@ -138,6 +140,9 @@ export function installPublicNavigation() {
           dialog: null,
           homeTool: route,
           homeAction: null,
+          textDraft: null,
+          selectedAnnotation: null,
+          appearanceOpen: false,
           workspaceMode: "edit",
         });
     } finally {

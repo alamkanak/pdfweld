@@ -106,7 +106,7 @@ function DocumentPreview({
         <img
           src={url}
           alt={`${file.name} thumbnail`}
-          className="h-full w-full object-contain"
+          className="h-full w-full object-cover object-center"
           onError={() => setResult({ status: "unavailable" })}
         />
       ) : result.status === "locked" || result.status === "unavailable" ? (
@@ -480,7 +480,7 @@ export function Home({ staticTool }: { staticTool?: HomeToolId | null } = {}) {
                       <img
                         src={`${import.meta.env.BASE_URL}field-notes-cover.png`}
                         alt="Field Notes sample PDF cover"
-                        className="h-14 w-10 object-contain"
+                        className="h-14 w-10 object-cover object-center"
                       />
                       <span className="flex-1">
                         <strong className="block text-sm font-medium text-studio-200">
@@ -594,7 +594,7 @@ export function Home({ staticTool }: { staticTool?: HomeToolId | null } = {}) {
                             <img
                               src={`${import.meta.env.BASE_URL}field-notes-cover.png`}
                               alt="Field Notes sample PDF cover"
-                              className="h-full w-full object-contain"
+                              className="h-full w-full object-cover object-center"
                             />
                           }
                         />

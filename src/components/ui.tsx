@@ -156,6 +156,97 @@ export function Label({ children }: { children: ReactNode }) {
     </span>
   );
 }
+export const palette = [
+  { hex: "#b8ce5d", className: "bg-[#b8ce5d]" },
+  { hex: "#f2ca68", className: "bg-[#f2ca68]" },
+  { hex: "#eb957e", className: "bg-[#eb957e]" },
+  { hex: "#82b5d6", className: "bg-[#82b5d6]" },
+  { hex: "#b79ad8", className: "bg-[#b79ad8]" },
+  { hex: "#29372f", className: "bg-[#29372f]" },
+  { hex: "#202123", className: "bg-[#202123]" },
+  { hex: "#ffffff", className: "bg-white" },
+];
+export function ColorPicker({
+  value,
+  onChange,
+  onCommit,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onCommit?: (value: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <fieldset disabled={disabled}>
+      <legend className="mb-2 text-xs font-medium text-studio-400">
+        Color
+      </legend>
+      <div className="grid grid-cols-4 gap-2">
+        {palette.map(({ hex: color, className }) => (
+          <button
+            key={color}
+            type="button"
+            aria-label={`Use color ${color}`}
+            aria-pressed={value.toLowerCase() === color}
+            onClick={() => {
+              onChange(color);
+              onCommit?.(color);
+            }}
+            className={clsx(
+              "flex h-10 items-center justify-center rounded-lg border border-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-300",
+              className,
+              value.toLowerCase() === color &&
+                "ring-2 ring-white/70 ring-offset-2 ring-offset-studio-800",
+            )}
+          >
+            {value.toLowerCase() === color && (
+              <Check
+                size={16}
+                className={
+                  color === "#202123" || color === "#29372f"
+                    ? "text-white"
+                    : "text-studio-950"
+                }
+              />
+            )}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <input
+          type="color"
+          aria-label="Custom color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={(e) => onCommit?.(e.target.value)}
+          disabled={disabled}
+          className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-white/10 bg-studio-900 p-1"
+        />
+        <Input
+          aria-label="Hex color"
+          key={value}
+          defaultValue={value}
+          maxLength={7}
+          compact
+          disabled={disabled}
+          onBlur={(e) => {
+            if (/^#[0-9a-f]{6}$/i.test(e.target.value)) {
+              onChange(e.target.value);
+              onCommit?.(e.target.value);
+            } else e.target.value = value;
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      </div>
+    </fieldset>
+  );
+}
 export function Divider() {
   return <div className="my-3 h-px bg-white/10" role="separator" />;
 }
@@ -301,6 +392,7 @@ export function PromptDialog() {
               <Label>{f.label}</Label>
               {f.options ? (
                 <Select
+                  aria-label={f.label}
                   value={values[f.key] || ""}
                   onChange={(e) =>
                     setValues({ ...values, [f.key]: e.target.value })
@@ -313,6 +405,7 @@ export function PromptDialog() {
                 </Select>
               ) : f.type === "textarea" ? (
                 <textarea
+                  aria-label={f.label}
                   className="min-h-28 w-full rounded-lg border border-white/10 bg-studio-950/50 p-3 text-base sm:text-sm outline-none focus:border-lime-400"
                   value={values[f.key] || ""}
                   onChange={(e) =>
@@ -322,6 +415,7 @@ export function PromptDialog() {
                 />
               ) : (
                 <Input
+                  aria-label={f.label}
                   type={f.type || "text"}
                   value={values[f.key] || ""}
                   onChange={(e) =>

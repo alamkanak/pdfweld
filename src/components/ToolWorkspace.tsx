@@ -29,10 +29,8 @@ import {
 } from "../lib/home-tools";
 import type { DocumentInfo, RecentFile } from "../lib/types";
 import { Button, IconButton, Input, Label, Select } from "./ui";
-import { ResizablePane } from "./ResizablePane";
 import { PaneToolbar } from "./PaneLayout";
 import { ToolGuide } from "../seo/PublicContent";
-import { useMediaQuery } from "../hooks/use-media-query";
 import clsx from "clsx";
 
 type Entry = TaskFile & {
@@ -112,7 +110,7 @@ function ToolSettings({
   return (
     <fieldset disabled={disabled} className="min-w-0">
       <legend className="mb-3 text-sm font-medium text-white">Options</legend>
-      <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {["combine", "images-pdf"].includes(tool) &&
           field("name", "Output filename", "text", true)}
         {["combine", "images-pdf"].includes(tool) &&
@@ -252,8 +250,7 @@ export function ToolWorkspace({
   library: RecentFile[];
   onClose: () => void;
 }) {
-  const tool = getHomeTool(id),
-    desktop = useMediaQuery("(min-width: 1024px)");
+  const tool = getHomeTool(id);
   const [entries, setEntries] = useState<Entry[]>([]),
     [options, setOptions] = useState<TaskOptions>(() => defaults(id));
   const [adding, setAdding] = useState(false),
@@ -536,342 +533,392 @@ export function ToolWorkspace({
         </div>
       </PaneToolbar>
       <div className="flex min-h-0 flex-1">
-        {desktop && (
-          <ResizablePane
-            id={`task-${id}`}
-            label={`${tool.label} options`}
-            defaultWidth={240}
-            maxWidth={360}
-            reserve={320}
-            className="border-r border-white/10 p-3"
-          >
-            <div className="min-h-0 overflow-y-auto">{settings}</div>
-          </ResizablePane>
-        )}
-        <div className="min-w-0 flex-1 overflow-y-auto p-3">
-          {error && (
-            <p
-              role="alert"
-              className="mb-3 rounded-lg border border-red-400/20 bg-red-400/5 p-3 text-sm text-red-300"
-            >
-              {error}
-            </p>
-          )}
-          {running && (
-            <p
-              role="status"
-              className="mb-3 flex items-center gap-2 text-sm text-studio-200"
-            >
-              <LoaderCircle size={17} className="animate-spin text-lime-300" />
-              Processing on your device…
-            </p>
-          )}
-          {result ? (
-            <>
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <Check size={20} className="text-lime-300" />
-                <h2 className="flex-1 text-base font-medium text-white">
-                  {result.outputs.length}{" "}
-                  {result.outputs.length === 1 ? "file" : "files"} ready
-                  {result.errors.length
-                    ? ` · ${result.errors.length} failed`
-                    : ""}
-                </h2>
-                {result.outputs.length > 1 && (
-                  <Button
-                    variant="primary"
-                    disabled={running}
-                    onClick={() => void downloadAll()}
-                  >
-                    <Download size={16} />
-                    Download all as ZIP
-                  </Button>
-                )}
-              </div>
-              <div className="space-y-2">
-                {result.outputs.map((output) => (
-                  <ResultFile
-                    key={output.name}
-                    file={output}
-                    tool={id}
-                    disabled={running}
-                  />
-                ))}
-              </div>
-              {result.errors.map((failure) => (
-                <div
-                  key={failure.id}
-                  role="alert"
-                  className="mt-2 rounded-lg border border-red-400/20 p-3 text-sm text-red-300"
-                >
-                  <strong>{failure.name}</strong>
-                  <p className="mt-1 text-xs">{failure.message}</p>
-                </div>
-              ))}
-              {result.comparison && (
-                <section className="mt-4 space-y-2">
-                  <h2 className="text-base text-white">Text differences</h2>
-                  {result.comparison
-                    .filter((page) => !page.same)
-                    .slice(0, 100)
-                    .map((page) => (
-                      <details
-                        key={page.page}
-                        className="rounded-lg border border-white/10 p-3"
-                      >
-                        <summary className="cursor-pointer text-sm text-studio-200">
-                          Page {page.page}
-                        </summary>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          <pre className="whitespace-pre-wrap break-words bg-white/5 p-2 font-sans text-xs text-studio-400">
-                            {page.before.slice(0, 2000) || "(No page)"}
-                          </pre>
-                          <pre className="whitespace-pre-wrap break-words bg-white/5 p-2 font-sans text-xs text-studio-400">
-                            {page.after.slice(0, 2000) || "(No page)"}
-                          </pre>
-                        </div>
-                      </details>
-                    ))}
-                  <p className="text-xs text-studio-400">
-                    The JSON download includes the complete comparison. Up to
-                    100 changed pages and 2,000 characters per side are
-                    previewed here.
-                  </p>
-                </section>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <input
-                  ref={input}
-                  aria-label="Source files"
-                  type="file"
-                  accept={accept}
-                  multiple={tool.multiple}
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    e.target.value = "";
-                    void addUploads(files);
-                  }}
+        <div className="min-w-0 flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-4xl p-3 sm:p-4">
+            {error && (
+              <p
+                role="alert"
+                className="mb-3 rounded-lg border border-red-400/20 bg-red-400/5 p-3 text-sm text-red-300"
+              >
+                {error}
+              </p>
+            )}
+            {running && (
+              <p
+                role="status"
+                className="mb-3 flex items-center gap-2 text-sm text-studio-200"
+              >
+                <LoaderCircle
+                  size={17}
+                  className="animate-spin text-lime-300"
                 />
-                <Button
-                  disabled={blocked}
-                  onClick={() => input.current?.click()}
-                >
-                  <Plus size={16} />
-                  {entries.length && !tool.multiple
-                    ? "Replace file"
-                    : "Choose files"}
-                </Button>
-                {tool.accept !== "images" && library.length > 0 && (
-                  <Select
-                    aria-label="Choose a library document"
-                    className="w-full sm:w-56"
-                    disabled={blocked}
-                    value=""
-                    onChange={(e) => {
-                      const file = library.find((f) => f.id === e.target.value);
-                      if (file)
-                        void add([
-                          {
-                            name: file.name,
-                            bytes: file.bytes,
-                            mime: "application/pdf",
-                            libraryId: file.id,
-                          },
-                        ]);
-                    }}
+                Processing on your device…
+              </p>
+            )}
+            {result ? (
+              <>
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <Check size={20} className="text-lime-300" />
+                  <h2 className="flex-1 text-base font-medium text-white">
+                    {result.outputs.length}{" "}
+                    {result.outputs.length === 1 ? "file" : "files"} ready
+                    {result.errors.length
+                      ? ` · ${result.errors.length} failed`
+                      : ""}
+                  </h2>
+                  {result.outputs.length > 1 && (
+                    <Button
+                      variant="primary"
+                      disabled={running}
+                      onClick={() => void downloadAll()}
+                    >
+                      <Download size={16} />
+                      Download all as ZIP
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {result.outputs.map((output) => (
+                    <ResultFile
+                      key={output.name}
+                      file={output}
+                      tool={id}
+                      disabled={running}
+                    />
+                  ))}
+                </div>
+                {result.errors.map((failure) => (
+                  <div
+                    key={failure.id}
+                    role="alert"
+                    className="mt-2 rounded-lg border border-red-400/20 p-3 text-sm text-red-300"
                   >
-                    <option value="">From your library…</option>
-                    {library.map((file) => (
-                      <option key={file.id} value={file.id}>
-                        {file.name}
-                      </option>
-                    ))}
-                  </Select>
+                    <strong>{failure.name}</strong>
+                    <p className="mt-1 text-xs">{failure.message}</p>
+                  </div>
+                ))}
+                {result.comparison && (
+                  <section className="mt-4 space-y-2">
+                    <h2 className="text-base text-white">Text differences</h2>
+                    {result.comparison
+                      .filter((page) => !page.same)
+                      .slice(0, 100)
+                      .map((page) => (
+                        <details
+                          key={page.page}
+                          className="rounded-lg border border-white/10 p-3"
+                        >
+                          <summary className="cursor-pointer text-sm text-studio-200">
+                            Page {page.page}
+                          </summary>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            <pre className="whitespace-pre-wrap break-words bg-white/5 p-2 font-sans text-xs text-studio-400">
+                              {page.before.slice(0, 2000) || "(No page)"}
+                            </pre>
+                            <pre className="whitespace-pre-wrap break-words bg-white/5 p-2 font-sans text-xs text-studio-400">
+                              {page.after.slice(0, 2000) || "(No page)"}
+                            </pre>
+                          </div>
+                        </details>
+                      ))}
+                    <p className="text-xs text-studio-400">
+                      The JSON download includes the complete comparison. Up to
+                      100 changed pages and 2,000 characters per side are
+                      previewed here.
+                    </p>
+                  </section>
                 )}
-                <span className="text-xs text-studio-400">
-                  {entries.length} {entries.length === 1 ? "file" : "files"}
-                  {min > 1 ? ` · ${min} required` : ""}
-                </span>
-              </div>
-              {!entries.length ? (
-                <button
-                  onClick={() => input.current?.click()}
-                  className="flex min-h-48 w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-white/20 p-4 text-center hover:border-lime-400/50"
+              </>
+            ) : (
+              <>
+                <div
+                  className={clsx(
+                    "flex flex-wrap items-center gap-2",
+                    (entries.length > 0 ||
+                      (tool.accept !== "images" && library.length > 0)) &&
+                      "mb-3",
+                  )}
                 >
-                  <Upload size={30} className="text-lime-300" />
-                  <span className="text-base text-white">
-                    Choose{" "}
-                    {tool.accept === "images"
-                      ? "images"
-                      : tool.multiple
-                        ? "files"
-                        : "a PDF"}{" "}
-                    to get started
-                  </span>
-                  <span className="text-xs text-studio-400">
-                    Or drop{" "}
-                    {tool.accept === "images"
-                      ? "PNG or JPEG images"
-                      : tool.accept === "mixed"
-                        ? "PDF, PNG, or JPEG files"
-                        : "PDF files"}{" "}
-                    here. Processing stays on this device.
-                  </span>
-                </button>
-              ) : (
-                <ol className="space-y-2">
-                  {entries.map((file, index) => (
-                    <li
-                      key={file.id}
-                      data-task-file={file.id}
-                      draggable={!blocked && tool.multiple}
-                      className="rounded-lg border border-white/10 bg-white/[.02] p-3"
-                      onDragStart={(e) => {
-                        dragged.current = file.id;
-                        e.dataTransfer.setData("text/x-pdfweld-file", file.id);
-                      }}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        if (dragged.current) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          reorder(
-                            entries.findIndex((f) => f.id === dragged.current),
-                            index,
-                          );
-                          dragged.current = null;
-                        }
+                  <input
+                    ref={input}
+                    aria-label="Source files"
+                    type="file"
+                    accept={accept}
+                    multiple={tool.multiple}
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      e.target.value = "";
+                      void addUploads(files);
+                    }}
+                  />
+                  {entries.length > 0 && (
+                    <Button
+                      disabled={blocked}
+                      onClick={() => input.current?.click()}
+                    >
+                      <Plus size={16} />
+                      {entries.length && !tool.multiple
+                        ? "Replace file"
+                        : "Choose files"}
+                    </Button>
+                  )}
+                  {tool.accept !== "images" && library.length > 0 && (
+                    <Select
+                      aria-label="Choose a library document"
+                      className="w-full sm:w-56"
+                      disabled={blocked}
+                      value=""
+                      onChange={(e) => {
+                        const file = library.find(
+                          (f) => f.id === e.target.value,
+                        );
+                        if (file)
+                          void add([
+                            {
+                              name: file.name,
+                              bytes: file.bytes,
+                              mime: "application/pdf",
+                              libraryId: file.id,
+                            },
+                          ]);
                       }}
                     >
-                      <div className="flex items-start gap-2">
-                        <FileText
-                          size={20}
-                          className="mt-1 shrink-0 text-studio-400"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <h3 className="break-words text-sm font-medium text-white">
-                            {file.name}
-                          </h3>
-                          <p className="mt-1 text-xs text-studio-400">
-                            {fileSize(file.bytes.length)}
-                            {file.info
-                              ? ` · ${file.info.pages.length} pages`
-                              : ""}{" "}
-                            ·{" "}
-                            {file.status === "loading"
-                              ? "Checking…"
-                              : file.status === "ready"
-                                ? "Ready"
-                                : file.status === "locked"
-                                  ? "Password needed"
-                                  : "Cannot read file"}
-                          </p>
-                        </div>
-                        {tool.multiple && (
-                          <>
-                            <IconButton
-                              disabled={blocked || index === 0}
-                              label={`Move ${file.name} earlier`}
-                              onClick={() => reorder(index, index - 1)}
-                              className="h-9 w-9"
-                            >
-                              <ArrowUp size={15} />
-                            </IconButton>
-                            <IconButton
-                              disabled={blocked || index === entries.length - 1}
-                              label={`Move ${file.name} later`}
-                              onClick={() => reorder(index, index + 1)}
-                              className="h-9 w-9"
-                            >
-                              <ArrowDown size={15} />
-                            </IconButton>
-                          </>
-                        )}
-                        <IconButton
-                          disabled={blocked}
-                          label={`Remove ${file.name}`}
-                          onClick={() =>
-                            setEntries((current) =>
-                              current.filter((f) => f.id !== file.id),
-                            )
-                          }
-                          className="h-9 w-9"
-                        >
-                          <X size={15} />
-                        </IconButton>
-                      </div>
-                      {id === "combine" && (
-                        <label className="mt-2 block">
-                          <Label>Pages from {file.name}</Label>
-                          <Input
-                            aria-label={`Pages from ${file.name}`}
-                            disabled={blocked}
-                            value={file.pages || ""}
-                            placeholder="All pages, or 1, 3-5"
-                            onChange={(e) =>
-                              update(file.id, { pages: e.target.value })
-                            }
-                          />
-                        </label>
-                      )}
-                      {file.status === "locked" && (
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <Input
-                            aria-label={`Password for ${file.name}`}
-                            type="password"
-                            autoComplete="off"
-                            className="min-w-0 flex-1"
-                            value={file.password || ""}
-                            disabled={blocked}
-                            onChange={(e) =>
-                              update(file.id, { password: e.target.value })
-                            }
-                          />
-                          <Button
-                            disabled={blocked}
-                            onClick={async () => {
-                              setAdding(true);
-                              await assess(file);
-                              if (alive.current) setAdding(false);
-                            }}
-                          >
-                            <LockKeyhole size={14} />
-                            Unlock
-                          </Button>
-                        </div>
-                      )}
-                      {file.error && (
-                        <p className="mt-2 text-xs text-red-300">
-                          {file.error}
-                        </p>
-                      )}
-                      {!!file.info?.signedFields && (
-                        <p className="mt-2 text-xs leading-5 text-amber-200">
-                          This PDF has a certificate signature. Rewritten output
-                          may invalidate it.
-                        </p>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              )}
-              {!desktop && (
-                <div className="mt-3 rounded-lg border border-white/10 p-3">
-                  {settings}
+                      <option value="">From your library…</option>
+                      {library.map((file) => (
+                        <option key={file.id} value={file.id}>
+                          {file.name}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                  {entries.length > 0 && (
+                    <span className="text-xs text-studio-400">
+                      {entries.length} {entries.length === 1 ? "file" : "files"}
+                      {min > 1 ? ` · ${min} required` : ""}
+                    </span>
+                  )}
                 </div>
-              )}
-              <ToolGuide id={id} />
-            </>
-          )}
+                {!entries.length ? (
+                  <button
+                    aria-label="Choose files"
+                    disabled={blocked}
+                    onClick={() => input.current?.click()}
+                    className="flex min-h-48 w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-white/20 p-4 text-center hover:border-lime-400/50"
+                  >
+                    <Upload size={30} className="text-lime-300" />
+                    <span className="text-base text-white">
+                      Choose{" "}
+                      {tool.accept === "images"
+                        ? "images"
+                        : tool.multiple
+                          ? "files"
+                          : "a PDF"}{" "}
+                      to get started
+                    </span>
+                    <span className="text-xs text-studio-400">
+                      Or drop{" "}
+                      {tool.accept === "images"
+                        ? "PNG or JPEG images"
+                        : tool.accept === "mixed"
+                          ? "PDF, PNG, or JPEG files"
+                          : "PDF files"}{" "}
+                      here. Processing stays on this device.
+                    </span>
+                  </button>
+                ) : (
+                  <ol className="space-y-2">
+                    {entries.map((file, index) => (
+                      <li
+                        key={file.id}
+                        data-task-file={file.id}
+                        draggable={!blocked && tool.multiple}
+                        className="rounded-lg border border-white/10 bg-white/[.02] p-3"
+                        onDragStart={(e) => {
+                          dragged.current = file.id;
+                          e.dataTransfer.setData(
+                            "text/x-pdfweld-file",
+                            file.id,
+                          );
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          if (dragged.current) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            reorder(
+                              entries.findIndex(
+                                (f) => f.id === dragged.current,
+                              ),
+                              index,
+                            );
+                            dragged.current = null;
+                          }
+                        }}
+                      >
+                        <div className="flex flex-wrap items-center gap-3">
+                          <SourcePreview file={file} />
+                          <div className="min-w-0 flex-1">
+                            <h3 className="break-words text-sm font-medium text-white">
+                              {file.name}
+                            </h3>
+                            <p className="mt-1 text-xs text-studio-400">
+                              {fileSize(file.bytes.length)}
+                              {file.info
+                                ? ` · ${file.info.pages.length} pages`
+                                : ""}{" "}
+                              ·{" "}
+                              {file.status === "loading"
+                                ? "Checking…"
+                                : file.status === "ready"
+                                  ? "Ready"
+                                  : file.status === "locked"
+                                    ? "Password needed"
+                                    : "Cannot read file"}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1 max-[420px]:basis-full max-[420px]:justify-end">
+                            {tool.multiple && (
+                              <>
+                                <IconButton
+                                  disabled={blocked || index === 0}
+                                  label={`Move ${file.name} earlier`}
+                                  onClick={() => reorder(index, index - 1)}
+                                  className="h-9 w-9"
+                                >
+                                  <ArrowUp size={15} />
+                                </IconButton>
+                                <IconButton
+                                  disabled={
+                                    blocked || index === entries.length - 1
+                                  }
+                                  label={`Move ${file.name} later`}
+                                  onClick={() => reorder(index, index + 1)}
+                                  className="h-9 w-9"
+                                >
+                                  <ArrowDown size={15} />
+                                </IconButton>
+                              </>
+                            )}
+                            <IconButton
+                              disabled={blocked}
+                              label={`Remove ${file.name}`}
+                              onClick={() =>
+                                setEntries((current) =>
+                                  current.filter((f) => f.id !== file.id),
+                                )
+                              }
+                              className="h-9 w-9"
+                            >
+                              <X size={15} />
+                            </IconButton>
+                          </div>
+                        </div>
+                        {id === "combine" && (
+                          <label className="mt-2 block">
+                            <Label>Pages from {file.name}</Label>
+                            <Input
+                              aria-label={`Pages from ${file.name}`}
+                              disabled={blocked}
+                              value={file.pages || ""}
+                              placeholder="All pages, or 1, 3-5"
+                              onChange={(e) =>
+                                update(file.id, { pages: e.target.value })
+                              }
+                            />
+                          </label>
+                        )}
+                        {file.status === "locked" && (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <Input
+                              aria-label={`Password for ${file.name}`}
+                              type="password"
+                              autoComplete="off"
+                              className="min-w-0 flex-1"
+                              value={file.password || ""}
+                              disabled={blocked}
+                              onChange={(e) =>
+                                update(file.id, { password: e.target.value })
+                              }
+                            />
+                            <Button
+                              disabled={blocked}
+                              onClick={async () => {
+                                setAdding(true);
+                                await assess(file);
+                                if (alive.current) setAdding(false);
+                              }}
+                            >
+                              <LockKeyhole size={14} />
+                              Unlock
+                            </Button>
+                          </div>
+                        )}
+                        {file.error && (
+                          <p className="mt-2 text-xs text-red-300">
+                            {file.error}
+                          </p>
+                        )}
+                        {!!file.info?.signedFields && (
+                          <p className="mt-2 text-xs leading-5 text-amber-200">
+                            This PDF has a certificate signature. Rewritten
+                            output may invalidate it.
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                <section
+                  aria-label="Tool setup"
+                  className="mt-4 border-t border-white/10 pt-4"
+                >
+                  {settings}
+                </section>
+                <ToolGuide id={id} />
+              </>
+            )}
+          </div>
         </div>
       </div>
     </main>
   );
 }
+function SourcePreview({ file }: { file: Entry }) {
+  const image =
+    (file.bytes[0] === 137 && file.bytes[1] === 80) ||
+    (file.bytes[0] === 255 && file.bytes[1] === 216);
+  const [url, setUrl] = useState<string>();
+  useEffect(() => {
+    if (!image) return;
+    const next = URL.createObjectURL(
+      new Blob([new Uint8Array(file.bytes)], {
+        type: file.bytes[0] === 137 ? "image/png" : "image/jpeg",
+      }),
+    );
+    setUrl(next);
+    return () => URL.revokeObjectURL(next);
+  }, [image, file.bytes]);
+  return (
+    <div
+      className={clsx(
+        "flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10",
+        image ? "bg-white" : "bg-studio-950/50",
+      )}
+    >
+      {url ? (
+        <img
+          src={url}
+          alt={`${file.name} preview`}
+          className="h-full w-full object-cover object-center"
+        />
+      ) : (
+        <FileText size={24} className="text-studio-400" />
+      )}
+    </div>
+  );
+}
+
 function ResultFile({
   file,
   tool,

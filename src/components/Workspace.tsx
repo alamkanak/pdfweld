@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -10,19 +10,12 @@ import {
   MessageSquare,
   Search,
   MoreHorizontal,
-  PanelLeft,
   SlidersHorizontal,
-  Check,
   LockKeyhole,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Minus,
   Keyboard,
   Settings2,
-  X,
-  Command,
-  FileText,
   Activity,
   ArrowUpRight,
   SquareCheck,
@@ -30,22 +23,14 @@ import {
 import { useApp, ask, persist } from "../lib/store";
 import { drawingTools, toolFor } from "../lib/tools";
 import { chooseTool, runAction } from "../lib/actions";
-import { Button, IconButton, Badge, Input, Label } from "./ui";
+import { Button, IconButton } from "./ui";
 import { Sidebar } from "./Sidebar";
 import { Viewer, goToPage } from "./Viewer";
 import { Logo } from "./Home";
 import { engine } from "../lib/client";
 import clsx from "clsx";
-const palette = [
-  { hex: "#b8ce5d", class: "bg-[#b8ce5d]" },
-  { hex: "#f2ca68", class: "bg-[#f2ca68]" },
-  { hex: "#eb957e", class: "bg-[#eb957e]" },
-  { hex: "#82b5d6", class: "bg-[#82b5d6]" },
-  { hex: "#b79ad8", class: "bg-[#b79ad8]" },
-  { hex: "#29372f", class: "bg-[#29372f]" },
-  { hex: "#202123", class: "bg-[#202123]" },
-  { hex: "#ffffff", class: "bg-white" },
-];
+import { AppearanceControls } from "./AppearanceControls";
+import { commitTextDraft } from "../lib/text-editing";
 export function Workspace() {
   const info = useApp((s) => s.info)!,
     tool = useApp((s) => s.tool),
@@ -58,10 +43,30 @@ export function Workspace() {
     dirty = useApp((s) => s.dirty),
     mode = useApp((s) => s.workspaceMode),
     documentId = useApp((s) => s.id);
-  const [options, setOptions] = useState(false),
-    [exportOpen, setExportOpen] = useState(false);
+  const options = useApp((s) => s.appearanceOpen);
+  const setOptions = (appearanceOpen: boolean) => {
+    useApp.setState({ appearanceOpen });
+    if (!appearanceOpen)
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLTextAreaElement>("[data-text-editor] textarea")
+          ?.focus({ preventScroll: true }),
+      );
+  };
+  const [exportOpen, setExportOpen] = useState(false);
   const t = toolFor(tool);
   const fillSign = mode === "fill-sign";
+  useEffect(() => {
+    if (!options) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOptions(false);
+    };
+    window.addEventListener("keydown", close, true);
+    return () => window.removeEventListener("keydown", close, true);
+  }, [options]);
   useEffect(() => {
     if (!fillSign) return;
     let active = true;
@@ -86,6 +91,8 @@ export function Workspace() {
             label="Back to studio"
             disabled={!!busy}
             onClick={async () => {
+              await commitTextDraft();
+              if (useApp.getState().textDraft) return;
               await persist();
               useApp.setState({
                 info: null,
@@ -182,11 +189,12 @@ export function Workspace() {
             aria-label={fillSign ? "Save filled PDF" : "Export"}
             disabled={!!busy}
             variant="primary"
-            onClick={() =>
-              fillSign
-                ? void useApp.getState().save()
-                : setExportOpen(!exportOpen)
-            }
+            onClick={async () => {
+              await commitTextDraft();
+              if (useApp.getState().textDraft) return;
+              if (fillSign) await useApp.getState().save();
+              else setExportOpen(!exportOpen);
+            }}
             className="h-9 min-h-9 rounded-lg px-3 text-xs sm:px-4"
           >
             <Download size={15} />
@@ -364,20 +372,20 @@ export function Workspace() {
                 </>
               )}
             </div>
-            <div className="relative">
+            <div className="relative" data-appearance-controls>
               <IconButton
                 label="Tool settings and color"
                 active={options}
                 onClick={() => setOptions(!options)}
-                className="h-9 w-9"
+                className="relative z-30 h-9 w-9"
               >
-                <span
-                  className={clsx(
-                    "h-[21px] w-[21px] rounded-full ring-2 ring-white/10 ring-offset-2 ring-offset-studio-900",
-                    palette.find((p) => p.hex === color)?.class ||
-                      "bg-lime-400",
-                  )}
-                />
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-[21px] w-[21px] rounded-full ring-2 ring-white/10 ring-offset-2 ring-offset-studio-900"
+                >
+                  <circle cx="12" cy="12" r="12" fill={color} />
+                </svg>
               </IconButton>
               {options && (
                 <>
@@ -385,8 +393,12 @@ export function Workspace() {
                     className="fixed inset-0 z-20"
                     onClick={() => setOptions(false)}
                   />
-                  <div className="absolute right-0 top-12 z-30 w-64 rounded-lg border border-white/10 bg-studio-800 p-3 shadow-panel">
-                    <ToolSettings />
+                  <div
+                    role="region"
+                    aria-label="Appearance"
+                    className="absolute right-0 top-12 z-30 max-h-[min(70dvh,520px)] w-64 overflow-y-auto rounded-lg border border-white/10 bg-studio-800 p-3 shadow-panel"
+                  >
+                    <AppearanceControls />
                   </div>
                 </>
               )}
@@ -493,93 +505,6 @@ export function Workspace() {
           <MessageSquare size={18} />
         </IconButton>
       </nav>
-    </div>
-  );
-}
-function ToolSettings() {
-  const color = useApp((s) => s.color),
-    width = useApp((s) => s.width),
-    opacity = useApp((s) => s.opacity),
-    author = useApp((s) => s.author);
-  return (
-    <div className="space-y-3">
-      <div>
-        <Label>Color</Label>
-        <div className="grid grid-cols-4 gap-3">
-          {palette.map((p) => (
-            <button
-              key={p.hex}
-              aria-label={`Use color ${p.hex}`}
-              onClick={() => useApp.setState({ color: p.hex })}
-              className={clsx(
-                "flex h-8 items-center justify-center rounded-lg",
-                p.class,
-                color === p.hex
-                  ? "ring-2 ring-white/70 ring-offset-2 ring-offset-studio-800"
-                  : "ring-1 ring-white/10",
-              )}
-            >
-              {color === p.hex && (
-                <Check
-                  size={13}
-                  className={
-                    p.hex === "#202123" || p.hex === "#29372f"
-                      ? "text-white"
-                      : "text-studio-950"
-                  }
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-      <label className="block">
-        <Label>
-          Stroke / text size{" "}
-          <span className="float-right tabular-nums">{width.toFixed(1)}</span>
-        </Label>
-        <input
-          type="range"
-          aria-label="Stroke size"
-          min=".5"
-          max="36"
-          step=".5"
-          value={width}
-          onChange={(e) => useApp.setState({ width: Number(e.target.value) })}
-          className="h-2 w-full accent-lime-400"
-        />
-      </label>
-      <label className="block">
-        <Label>
-          Opacity{" "}
-          <span className="float-right">{Math.round(opacity * 100)}%</span>
-        </Label>
-        <input
-          type="range"
-          aria-label="Opacity"
-          min=".1"
-          max="1"
-          step=".05"
-          value={opacity}
-          onChange={(e) => useApp.setState({ opacity: Number(e.target.value) })}
-          className="h-2 w-full accent-lime-400"
-        />
-      </label>
-      <label className="block">
-        <Label>Comment author</Label>
-        <Input
-          className="h-9 text-xs"
-          value={author}
-          onChange={(e) => {
-            useApp.setState({ author: e.target.value });
-            try {
-              localStorage.setItem("pdfweld-author", e.target.value);
-            } catch {
-              /* preferences are optional */
-            }
-          }}
-        />
-      </label>
     </div>
   );
 }

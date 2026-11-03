@@ -107,9 +107,10 @@ test("adding text paints readable glyphs without a colored rectangle", async ({
   const ink = page.locator('[data-page="0"] canvas').last();
   const box = (await ink.boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.12, box.y + box.height * 0.15);
-  const prompt = page.getByRole("dialog", { name: "Add text", exact: true });
-  await prompt.getByLabel("Text", { exact: true }).fill("A visible note");
-  await prompt.getByRole("button", { name: "Add", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Text on PDF", exact: true })
+    .fill("A visible note");
+  await page.getByRole("button", { name: "Done", exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(

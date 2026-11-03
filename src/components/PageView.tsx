@@ -14,6 +14,8 @@ import type {
 } from "../lib/types";
 import clsx from "clsx";
 import { AnnotationElement } from "./AnnotationElement";
+import { InlineTextEditor } from "./InlineTextEditor";
+import { editText } from "../lib/text-editing";
 const paint = (canvas: HTMLCanvasElement, result: RenderResult) => {
   canvas.width = result.width;
   canvas.height = result.height;
@@ -212,61 +214,25 @@ export const PageView = memo(function PageView({
   const editAnnotation = async (id: number) => {
     const a = details?.annotations.find((a) => a.id === id);
     if (!a) return;
-    const color =
-      a.color.length === 3
-        ? "#" +
-          a.color
-            .map((c) =>
-              Math.round(c * 255)
-                .toString(16)
-                .padStart(2, "0"),
-            )
-            .join("")
-        : "#29372f";
-    const answer = await ask({
-      title: `Edit ${a.type === "FreeText" ? "text" : a.type.toLowerCase()}`,
-      fields: [
-        {
-          key: "operation",
-          label: "Action",
-          value: "Update",
-          options: ["Update", "Delete"],
-        },
-        {
-          key: "text",
-          label: "Text / comment",
-          value: a.text,
-          type: "textarea",
-        },
-        { key: "color", label: "Color", type: "color", value: color },
-        { key: "opacity", label: "Opacity (%)", type: "number", value: "100" },
-        ...(a.type === "FreeText"
-          ? [
-              {
-                key: "fontSize",
-                label: "Text size (pt)",
-                type: "number",
-                value: "14",
-              },
-            ]
-          : []),
-      ],
-      submit: "Apply change",
-    });
-    if (answer)
-      await useApp.getState().act(
-        answer.operation === "Delete"
-          ? { type: "annotation-delete", page, id }
-          : {
-              type: "annotation-style",
-              page,
-              id,
-              text: answer.text,
-              color: answer.color,
-              opacity: Number(answer.opacity) / 100,
-              fontSize: Number(answer.fontSize) || 14,
-            },
-      );
+    if (a.type === "FreeText") {
+      editText(page, a);
+      return;
+    }
+    if (a.type === "Text") {
+      const answer = await ask({
+        title: "Edit comment",
+        fields: [
+          { key: "text", label: "Comment", value: a.text, type: "textarea" },
+        ],
+        submit: "Save comment",
+      });
+      if (answer)
+        await useApp
+          .getState()
+          .act({ type: "annotation-edit", page, id, text: answer.text });
+      return;
+    }
+    useApp.setState({ selectedAnnotation: { page, id }, appearanceOpen: true });
   };
   const position = (e: React.PointerEvent): Point => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -333,7 +299,13 @@ export const PageView = memo(function PageView({
     ctx.restore();
   };
   const down = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (e.button !== 0 || e.isPrimary === false) return;
+    if (
+      e.button !== 0 ||
+      e.isPrimary === false ||
+      useApp.getState().busy ||
+      useApp.getState().textDraft
+    )
+      return;
     const started = performance.now();
     const point = position(e);
     useApp.setState({ page });
@@ -422,23 +394,44 @@ export const PageView = memo(function PageView({
         rect = line.rect;
         text = line.text;
       }
+      if (kind === "text" || kind === "replace") {
+        if (
+          kind === "text" &&
+          (rect[2] - rect[0] < 8 || rect[3] - rect[1] < 8)
+        ) {
+          const x = Math.max(0, Math.min(p.width - 100, start[0]));
+          const y = Math.max(0, Math.min(p.height - 60, start[1]));
+          rect = [x, y, Math.min(p.width, x + 300), Math.min(p.height, y + 72)];
+        }
+        const fontSize =
+          kind === "replace"
+            ? details?.lines.find((l) => l.rect === rect)?.size || s.textSize
+            : s.textSize;
+        useApp.setState({
+          textDraft: {
+            page,
+            rect,
+            text,
+            kind,
+            color: s.color,
+            fontSize,
+            opacity: s.opacity,
+            replaceRect: kind === "replace" ? [...rect] : undefined,
+          },
+          selectedAnnotation: null,
+        });
+        clear();
+        return;
+      }
       const result = await ask({
         title:
-          kind === "replace"
-            ? "Replace this text"
-            : kind === "link"
-              ? "Add web link"
-              : kind === "field"
-                ? "Add text field"
-                : kind === "stamp"
-                  ? "Choose a stamp"
-                  : kind === "note"
-                    ? "Leave a comment"
-                    : "Add text",
-        description:
-          kind === "replace"
-            ? "The original text in this line is removed and replaced using Helvetica. Complex original formatting is not preserved."
-            : undefined,
+          kind === "link"
+            ? "Add web link"
+            : kind === "field"
+              ? "Add text field"
+              : kind === "stamp"
+                ? "Choose a stamp"
+                : "Leave a comment",
         fields: [
           {
             key: "text",
@@ -469,7 +462,7 @@ export const PageView = memo(function PageView({
             required: true,
           },
         ],
-        submit: kind === "replace" ? "Replace text" : "Add",
+        submit: "Add",
       });
       if (!result) {
         clear();
@@ -536,9 +529,9 @@ export const PageView = memo(function PageView({
       color: s.color,
       width:
         kind === "replace"
-          ? details?.lines.find((l) => l.rect === rect)?.size || 14
+          ? s.textSize
           : kind === "text"
-            ? Math.max(12, s.width)
+            ? s.textSize
             : kind === "signature"
               ? Math.max(1.5, s.width)
               : s.width,
@@ -711,13 +704,14 @@ export const PageView = memo(function PageView({
         </svg>
       )}
       {details &&
-        tool === "select" &&
+        ["select", "text"].includes(tool) &&
         info?.permissions.annotate &&
         details.annotations
           .filter(
             (a) =>
               !a.replyTo &&
               !a.locked &&
+              (tool !== "text" || a.type === "FreeText") &&
               ["FreeText", "Ink", "Stamp"].includes(a.type),
           )
           .map((a) => (
@@ -731,6 +725,12 @@ export const PageView = memo(function PageView({
               onEdit={() => void editAnnotation(a.id)}
             />
           ))}
+      <InlineTextEditor
+        page={page}
+        scale={scale}
+        pageHeight={p.height}
+        pageWidth={p.width}
+      />
       {!!searchQuads.length && (
         <svg
           viewBox={`0 0 ${p.width} ${p.height}`}
