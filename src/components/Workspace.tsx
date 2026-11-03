@@ -19,6 +19,7 @@ import {
   Activity,
   ArrowUpRight,
   SquareCheck,
+  Check,
 } from "lucide-react";
 import { useApp, ask, persist } from "../lib/store";
 import { drawingTools, toolFor } from "../lib/tools";
@@ -419,6 +420,37 @@ export function Workspace() {
             </div>
           </div>
           <Viewer />
+          {tool === "signature" && (
+            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-white/10 bg-studio-900 px-3 py-2">
+              <p className="text-xs text-studio-300">
+                Draw all strokes of your signature.
+              </p>
+              <Button
+                variant="primary"
+                className="shrink-0 text-xs"
+                disabled={!!busy}
+                onClick={async () => {
+                  const s = useApp.getState();
+                  const group = s.signatureGroup;
+                  s.set({ tool: "select" });
+                  try {
+                    const details = await engine.call("details", s.page);
+                    const signature = details.annotations.find(
+                      (a) => a.signatureGroup === group,
+                    );
+                    if (useApp.getState().id === s.id && signature)
+                      useApp.setState({
+                        selectedAnnotation: { page: s.page, id: signature.id },
+                      });
+                  } catch (error) {
+                    s.fail(error);
+                  }
+                }}
+              >
+                <Check size={15} /> Done
+              </Button>
+            </div>
+          )}
           <footer className="hidden h-7 shrink-0 items-center justify-between gap-3 border-t border-white/[.045] px-3 text-xs text-studio-400 md:flex">
             <span className="min-w-0 truncate">
               {fillSign

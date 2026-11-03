@@ -17,8 +17,14 @@ type Options = {
   pageWidth: number;
   pageHeight: number;
   preserveAspect?: boolean;
+  renderedRevision?: number;
   onStart?: () => void;
-  onCommit: (rect: Rect, mode: ElementGesture) => boolean | Promise<boolean>;
+  // A PDF commit returns the revision that must be painted before the preview
+  // can disappear. Draft-only gestures return a boolean.
+  onCommit: (
+    rect: Rect,
+    mode: ElementGesture,
+  ) => boolean | number | Promise<boolean | number>;
 };
 
 /** Pointer ownership survives selection renders and stays on a stable target.
@@ -39,6 +45,7 @@ export function useElementGesture(options: Options) {
     moved: boolean;
   } | null>(null);
   const pending = useRef(0),
+    awaitingPaint = useRef<number | null>(null),
     frame = useRef(0),
     mounted = useRef(true);
   const stopListening = useRef<() => void>(() => {});
@@ -76,11 +83,20 @@ export function useElementGesture(options: Options) {
     if (mounted.current && !pending.current) setPhase(null);
   };
   useLayoutEffect(() => {
+    if (
+      awaitingPaint.current !== null &&
+      (options.renderedRevision ?? -1) >= awaitingPaint.current
+    )
+      awaitingPaint.current = null;
     place(
       gesture.current?.next ||
-        (pending.current ? displayed.current : options.rect),
+        (pending.current || awaitingPaint.current !== null
+          ? displayed.current
+          : options.rect),
     );
-  }, [options.rect.join(","), options.scale]);
+    if (!gesture.current && !pending.current && awaitingPaint.current === null)
+      setPhase(null);
+  }, [options.rect.join(","), options.scale, options.renderedRevision]);
   useEffect(() => {
     mounted.current = true;
     window.addEventListener("pdfweld-navigation-start", cancel);
@@ -166,11 +182,23 @@ export function useElementGesture(options: Options) {
       pending.current++;
       try {
         const ok = await latest.current.onCommit(g.next, g.mode);
+        if (typeof ok === "number")
+          awaitingPaint.current = Math.max(awaitingPaint.current ?? -1, ok);
         if (!ok && !gesture.current && mounted.current)
           place(latest.current.rect);
       } finally {
         pending.current--;
-        if (mounted.current && !gesture.current && !pending.current)
+        if (
+          awaitingPaint.current !== null &&
+          (latest.current.renderedRevision ?? -1) >= awaitingPaint.current
+        )
+          awaitingPaint.current = null;
+        if (
+          mounted.current &&
+          !gesture.current &&
+          !pending.current &&
+          awaitingPaint.current === null
+        )
           setPhase(null);
       }
     };
@@ -184,16 +212,14 @@ export function useElementGesture(options: Options) {
     window.addEventListener("pointerup", finish, true);
     window.addEventListener("pointercancel", abort, true);
     window.addEventListener("blur", cancel);
-    g.target.addEventListener("lostpointercapture", abort as EventListener);
+    // Losing capture is not a cancelled drag (a browser or UI update can
+    // release it). Stable window listeners still own this pointer until up,
+    // pointercancel, navigation, or blur.
     stopListening.current = () => {
       window.removeEventListener("pointermove", move, true);
       window.removeEventListener("pointerup", finish, true);
       window.removeEventListener("pointercancel", abort, true);
       window.removeEventListener("blur", cancel);
-      g.target.removeEventListener(
-        "lostpointercapture",
-        abort as EventListener,
-      );
     };
   };
   return {

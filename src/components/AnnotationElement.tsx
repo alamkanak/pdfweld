@@ -35,6 +35,7 @@ export function AnnotationElement({
   scale,
   pageWidth,
   pageHeight,
+  renderedRevision,
   onEdit,
 }: {
   annotation: AnnotationInfo;
@@ -42,6 +43,7 @@ export function AnnotationElement({
   scale: number;
   pageWidth: number;
   pageHeight: number;
+  renderedRevision: number;
   onEdit: () => void;
 }) {
   const selected = useApp(
@@ -63,6 +65,7 @@ export function AnnotationElement({
     pageWidth,
     pageHeight,
     preserveAspect: a.type !== "FreeText",
+    renderedRevision,
     onStart: () => {
       useApp.setState({
         selectedAnnotation: { page, id: a.id },
@@ -75,7 +78,10 @@ export function AnnotationElement({
       });
       root.current?.focus({ preventScroll: true });
     },
-    onCommit: (rect) => transformAnnotation(documentId, page, a.id, rect),
+    onCommit: async (rect) => {
+      const ok = await transformAnnotation(documentId, page, a.id, rect);
+      return ok ? useApp.getState().revision : false;
+    },
   });
   const dragging = phase !== null;
   useEffect(() => {
@@ -141,6 +147,7 @@ export function AnnotationElement({
           height: (rect[3] - rect[1]) * scale,
         }}
         onPointerDown={(e) => begin(e, "move")}
+        onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={() => {
           if (canEdit() && !useApp.getState().busy) onEdit();
         }}
@@ -208,7 +215,7 @@ export function AnnotationElement({
         {dragging && a.type === "FreeText" && (
           <TextPreview annotation={a} scale={scale} />
         )}
-        {selected && a.type !== "FreeText" && (
+        {(selected || dragging) && a.type !== "FreeText" && (
           <canvas
             ref={preview}
             aria-hidden="true"

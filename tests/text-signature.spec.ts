@@ -207,3 +207,83 @@ test("signature chooser uploads an image with its proportions and keeps drawing 
     )
     .toEqual(["Stamp", "Ink"]);
 });
+
+test("pen signature keeps separate strokes together until Done and starts a new signature next time", async ({
+  page,
+}) => {
+  await openBlankPage(page);
+  const picker = await chooseSignature(page);
+  await picker
+    .getByRole("button", { name: "Draw signature", exact: true })
+    .click();
+  const paper = (await page.locator('[data-page="0"]').boundingBox())!;
+  const x = paper.x + paper.width * 0.15,
+    y = paper.y + paper.width * 0.2;
+  let id: number | undefined;
+  for (let i = 0; i < 3; i++) {
+    await page.mouse.move(x + i * 30, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 20 + i * 30, y + 15, { steps: 4 });
+    await page.mouse.move(x + 30 + i * 30, y - 10, { steps: 4 });
+    await page.mouse.up();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          async () =>
+            (await window.pdfweld.engine.call("details", 0)).annotations.length,
+        ),
+      )
+      .toBe(1);
+    const a = await page.evaluate(
+      async () =>
+        (await window.pdfweld.engine.call("details", 0)).annotations[0],
+    );
+    if (id !== undefined) expect(a.id).toBe(id);
+    id = a.id;
+    if (i === 0) await page.waitForTimeout(900);
+  }
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  const element = page.getByRole("button", {
+    name: "Move drawn signature or ink",
+    exact: true,
+  });
+  await expect(element).toHaveCount(1);
+  await expect(element).toHaveAttribute("aria-pressed", "true");
+  const before = await page.evaluate(
+    async () =>
+      (await window.pdfweld.engine.call("details", 0)).annotations[0].rect,
+  );
+  const box = (await element.boundingBox())!;
+  const factor = paper.width / 595;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    box.x + box.width / 2 + 25,
+    box.y + box.height / 2 + 45,
+    { steps: 5 },
+  );
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        async () =>
+          (await window.pdfweld.engine.call("details", 0)).annotations[0]
+            .rect[1],
+      ),
+    )
+    .toBeCloseTo(before[1] + 45 / factor, 0);
+  const next = await chooseSignature(page);
+  await next
+    .getByRole("button", { name: "Draw signature", exact: true })
+    .click();
+  await page.mouse.move(x, y + 80);
+  await page.mouse.down();
+  await page.mouse.move(x + 60, y + 90, { steps: 6 });
+  await page.mouse.up();
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(element).toHaveCount(2);
+  const annotations = await page.evaluate(
+    async () => (await window.pdfweld.engine.call("details", 0)).annotations,
+  );
+  expect(annotations[0].signatureGroup).not.toBe(annotations[1].signatureGroup);
+});

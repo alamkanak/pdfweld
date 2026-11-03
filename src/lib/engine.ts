@@ -241,6 +241,8 @@ export class PDFEngine {
         type: a.getType(),
         rect: offset(a.getBounds()),
         text: a.getContents(),
+        signatureGroup:
+          a.getObject().get("PDFWeldSignatureGroup").asString() || undefined,
         author: a.getAuthor(),
         fontSize:
           a.getType() === "FreeText"
@@ -443,10 +445,27 @@ export class PDFEngine {
           >
         ];
         if (!type) throw new Error("Unsupported annotation.");
-        const a = p.createAnnotation(type);
+        const existing =
+          m.tool === "signature" && m.signatureGroup
+            ? p
+                .getAnnotations()
+                .find(
+                  (a) =>
+                    a.getType() === "Ink" &&
+                    a.getObject().get("PDFWeldSignatureGroup").asString() ===
+                      m.signatureGroup,
+                )
+            : undefined;
+        const a = existing || p.createAnnotation(type);
         a.setAuthor(m.author);
-        a.setCreationDate(new Date());
-        a.setContents(m.text || "");
+        if (!existing) a.setCreationDate(new Date());
+        a.setModificationDate(new Date());
+        a.setContents(m.tool === "signature" ? "Signature" : m.text || "");
+        if (m.tool === "signature" && m.signatureGroup)
+          a.getObject().put(
+            "PDFWeldSignatureGroup",
+            d.newString(m.signatureGroup),
+          );
         // FreeText's /C is its background, while /DA controls the glyphs.
         // Giving both the same color makes the text disappear in a solid box.
         if (type !== "FreeText") a.setColor(rgb(m.color));
@@ -455,7 +474,11 @@ export class PDFEngine {
         if (type !== "FreeText" && a.hasBorder()) a.setBorderWidth(m.width);
         a.setOpacity(m.opacity);
         a.setFlags(mupdf.PDFAnnotation.IS_PRINT);
-        if (type === "Ink") a.setInkList([(m.points || []).map(pt)]);
+        if (type === "Ink")
+          a.setInkList([
+            ...(existing ? existing.getInkList() : []),
+            (m.points || []).map(pt),
+          ]);
         else if (type === "Line") {
           a.setLine(
             pt(m.points?.[0] || [m.rect[0], m.rect[1]]),

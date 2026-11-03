@@ -59,6 +59,7 @@ interface State {
   imageAspectRatio: number;
   imageLabel: string;
   selectedAnnotation: { page: number; id: number } | null;
+  signatureGroup: string | null;
   homeTool: HomeToolId | null;
   homeAction: string | null;
   workspaceMode: "edit" | "fill-sign";
@@ -125,6 +126,7 @@ export const useApp = create<State>((set, get) => ({
   imageAspectRatio: 1,
   imageLabel: "Image",
   selectedAnnotation: null,
+  signatureGroup: null,
   homeTool: null,
   homeAction: null,
   workspaceMode: "edit",
@@ -367,6 +369,22 @@ export const useApp = create<State>((set, get) => ({
     if (last) await get().open(last.bytes, last.name, last.id);
   },
 }));
+// A signature session lasts until Done or a tool change, never a timeout
+// between pen strokes. Each session gets a new PDF annotation group.
+useApp.subscribe((state, previous) => {
+  if (
+    state.signatureGroup &&
+    (state.tool !== "signature" || state.id !== previous.id)
+  )
+    useApp.setState({ signatureGroup: null });
+});
+export function startSignature() {
+  useApp.setState({
+    tool: "signature",
+    signatureGroup: documentId(),
+    selectedAnnotation: null,
+  });
+}
 export async function persist(bytes?: Uint8Array) {
   const s = useApp.getState();
   if (s.busy === "Opening document…") return;

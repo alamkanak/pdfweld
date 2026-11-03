@@ -20,7 +20,7 @@ import {
   PenLine,
   ImagePlus,
 } from "lucide-react";
-import { useApp } from "../lib/store";
+import { useApp, startSignature } from "../lib/store";
 import { engine } from "../lib/client";
 import { drawingTools, actionTools } from "../lib/tools";
 import { runAction, chooseImage, startHomeTool } from "../lib/actions";
@@ -99,12 +99,12 @@ function SignaturePicker({ onClose }: { onClose: () => void }) {
           disabled={loading}
           onClick={() => {
             const s = useApp.getState();
+            startSignature();
             s.set({
-              tool: "signature",
               dialog: null,
               panel: innerWidth < 768 ? null : s.panel,
             });
-            s.notify("Draw your signature on the page.");
+            s.notify("Draw all strokes of your signature, then choose Done.");
           }}
         >
           <PenLine size={20} /> Draw signature

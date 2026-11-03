@@ -81,6 +81,7 @@ export interface AnnotationInfo {
   fontSize?: number;
   opacity?: number;
   width?: number;
+  signatureGroup?: string;
 }
 export interface TextDraft {
   page: number;
@@ -126,6 +127,7 @@ export interface Mark {
   page: number;
   rect: Rect;
   points?: Point[];
+  signatureGroup?: string;
   text?: string;
   color: string;
   width: number;

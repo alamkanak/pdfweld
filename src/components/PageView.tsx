@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { engine } from "../lib/client";
-import { useApp, ask } from "../lib/store";
+import { useApp, ask, startSignature } from "../lib/store";
 import { renderQueue } from "../lib/render-queue";
 import { useVisible } from "../hooks/use-visible";
 import { metrics } from "../lib/performance";
@@ -133,6 +133,7 @@ export const PageView = memo(function PageView({
   const [details, setDetails] = useState<PageDetails | null>(null),
     [searchQuads, setSearchQuads] = useState<number[][]>([]),
     [ready, setReady] = useState(false);
+  const [renderedRevision, setRenderedRevision] = useState(-1);
   const liveFrame = useRef(0),
     drawn = useRef(0);
   const stroke = useRef<{
@@ -152,23 +153,21 @@ export const PageView = memo(function PageView({
   useEffect(() => {
     let cancelled = false;
     if (visible) {
-      renderQueue
-        .render(page, renderScale, undefined, 10)
-        .then((r) => {
+      Promise.all([
+        renderQueue.render(page, renderScale, undefined, 10),
+        engine.call("details", page),
+      ])
+        .then(([r, nextDetails]) => {
           if (!cancelled && canvas.current) {
             paint(canvas.current, r);
+            setDetails(nextDetails);
+            setRenderedRevision(revision);
             setReady(true);
           }
         })
         .catch((e) => {
           if (e.message !== "STALE_RENDER") useApp.getState().fail(e);
         });
-      engine
-        .call("details", page)
-        .then((r) => {
-          if (!cancelled) setDetails(r);
-        })
-        .catch(() => {});
     } else {
       if (canvas.current) {
         canvas.current.width = 1;
@@ -308,6 +307,8 @@ export const PageView = memo(function PageView({
       return;
     const started = performance.now();
     const point = position(e);
+    if (tool === "signature" && !useApp.getState().signatureGroup)
+      startSignature();
     useApp.setState({ page });
     if (tool === "eraser") {
       const a = details?.annotations
@@ -374,6 +375,9 @@ export const PageView = memo(function PageView({
     const kind = current.tool;
     let text = kind === "image" ? s.imageLabel : "";
     const clear = () => {
+      // A previous stroke may finish saving after the next one has started.
+      // Its completion must never erase the current pen preview.
+      if (stroke.current) return;
       const c = ink.current;
       c?.getContext("2d")?.clearRect(0, 0, c.width, c.height);
     };
@@ -523,6 +527,8 @@ export const PageView = memo(function PageView({
     }
     const mark: Mark = {
       tool: kind,
+      signatureGroup:
+        kind === "signature" ? s.signatureGroup || undefined : undefined,
       page,
       rect,
       points:
@@ -726,6 +732,7 @@ export const PageView = memo(function PageView({
               scale={scale}
               pageWidth={p.width}
               pageHeight={p.height}
+              renderedRevision={renderedRevision}
               onEdit={() => void editAnnotation(a.id)}
             />
           ))}
