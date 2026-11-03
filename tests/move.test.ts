@@ -1,8 +1,54 @@
 import { test, expect } from "vitest";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 import { readFileSync } from "node:fs";
 import { PDFEngine } from "../src/lib/engine";
 import type { Mark, Tool, Rect } from "../src/lib/types";
+
+test("resizing a text box preserves its font and the preview background preserves page content", async () => {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([400, 300]);
+  page.drawRectangle({
+    x: 0,
+    y: 0,
+    width: 400,
+    height: 300,
+    color: rgb(0.2, 0.4, 0.7),
+  });
+  const engine = new PDFEngine();
+  engine.open(await pdf.save(), "Background.pdf");
+  engine.addMark({
+    tool: "text",
+    page: 0,
+    rect: [30, 40, 320, 160],
+    text: "Text wrapping must not resize the actual font.",
+    width: 18,
+    color: "#000000",
+    opacity: 1,
+    author: "Test",
+  });
+  const a = engine.details(0).annotations[0];
+  const before = engine.info();
+  const patch = engine.render(0, 1, a.rect, a.id);
+  for (let i = 0; i < patch.pixels.length; i += 4) {
+    expect(Math.abs(patch.pixels[i] - 51)).toBeLessThanOrEqual(1);
+    expect(Math.abs(patch.pixels[i + 1] - 102)).toBeLessThanOrEqual(1);
+    expect(Math.abs(patch.pixels[i + 2] - 179)).toBeLessThanOrEqual(1);
+  }
+  expect(engine.info().canUndo).toBe(before.canUndo);
+  engine.action({
+    type: "annotation-transform",
+    page: 0,
+    id: a.id,
+    rect: [30, 40, 170, 200],
+  });
+  expect(engine.details(0).annotations[0].fontSize).toBe(18);
+  const saved = new PDFEngine();
+  saved.open(engine.save(), "Resized.pdf");
+  expect(saved.details(0).annotations[0].fontSize).toBe(18);
+  expect(saved.details(0).annotations[0].rect).toEqual([30, 40, 170, 200]);
+  engine.action({ type: "undo" });
+  expect(engine.details(0).annotations[0].rect).toEqual(a.rect);
+});
 
 test.each(["text", "image", "signature"] as Tool[])(
   "moves %s pixels, retains undo, and exports at the new position",

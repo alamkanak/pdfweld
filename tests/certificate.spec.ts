@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 test("certificate signing stays local and exports a real signed PDF", async ({
   page,
+  baseURL,
   browserName,
   isMobile,
 }) => {
@@ -11,10 +12,7 @@ test("certificate signing stays local and exports a real signed PDF", async ({
   );
   const external: string[] = [];
   page.on("request", (r) => {
-    if (
-      !r.url().startsWith("http://127.0.0.1:4173") &&
-      !/^(blob:|data:)/.test(r.url())
-    )
+    if (!r.url().startsWith(baseURL!) && !/^(blob:|data:)/.test(r.url()))
       external.push(r.url());
   });
   await page.goto("/");
@@ -23,7 +21,7 @@ test("certificate signing stays local and exports a real signed PDF", async ({
   await page.keyboard.press("ControlOrMeta+k");
   await page.getByPlaceholder("Search tools and commands…").fill("certificate");
   const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /Sign with certificate/ }).click();
+  await page.getByRole("option", { name: /Sign with certificate/ }).click();
   await (await chooser).setFiles("tests/fixtures/test-only.p12");
   await page.getByLabel("Certificate password").fill("pdfweld-test");
   const download = page.waitForEvent("download");

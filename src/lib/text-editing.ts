@@ -1,4 +1,5 @@
 import { useApp } from "./store";
+import { engine } from "./client";
 import type { AnnotationInfo } from "./types";
 
 export const annotationColor = (a: AnnotationInfo) =>
@@ -13,7 +14,20 @@ export const annotationColor = (a: AnnotationInfo) =>
         .join("")
     : "#29372f";
 
-export function editText(page: number, a: AnnotationInfo) {
+export async function editText(page: number, annotation: AnnotationInfo) {
+  const session = useApp.getState();
+  if (!session.info || session.busy) return;
+  let a: AnnotationInfo | undefined;
+  try {
+    a = (await engine.call("details", page)).annotations.find(
+      (a) => a.id === annotation.id,
+    );
+  } catch (error) {
+    session.fail(error);
+    return;
+  }
+  if (!a || useApp.getState().id !== session.id || useApp.getState().busy)
+    return;
   useApp.setState({
     tool: "select",
     selectedAnnotation: { page, id: a.id },

@@ -286,7 +286,7 @@ export function Modal({
     const focusables = () =>
       Array.from(
         root?.querySelectorAll<HTMLElement>(
-          'button:not(:disabled),input,select,textarea,[tabindex="0"]',
+          'button:not(:disabled):not([tabindex="-1"]),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]',
         ) || [],
       );
     const timer = setTimeout(() => {

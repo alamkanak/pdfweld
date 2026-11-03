@@ -87,11 +87,15 @@ test("metadata and selected tool follow deep links, reload, and browser history"
 
 test("static pages remain readable with JavaScript disabled", async ({
   browser,
+  baseURL,
 }) => {
-  const context = await browser.newContext({ javaScriptEnabled: false });
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL,
+  });
   try {
     const page = await context.newPage();
-    await page.goto(`http://127.0.0.1:4173${path("compress-pdf")}`);
+    await page.goto(path("compress-pdf"));
     await expect(
       page.getByRole("heading", { name: "Compress PDF", exact: true }),
     ).toBeVisible();
@@ -102,7 +106,7 @@ test("static pages remain readable with JavaScript disabled", async ({
     await expect(
       page.getByText(toolPages.compress.note, { exact: true }),
     ).toBeVisible();
-    await page.goto(`http://127.0.0.1:4173${site.base}`);
+    await page.goto(site.base);
     await expect(
       page
         .getByRole("navigation", { name: "Explore PDF tools" })

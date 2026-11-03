@@ -21,7 +21,7 @@ async function chooseSignature(page: Page) {
     .getByPlaceholder("Search tools and commands…")
     .fill("signature");
   await commands
-    .getByRole("button", { name: /^Signature Draw a signature/ })
+    .getByRole("option", { name: /^Signature Draw a signature/ })
     .click();
   return page.getByRole("dialog", { name: "Add your signature" });
 }

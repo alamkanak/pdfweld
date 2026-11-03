@@ -1,25 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, X, Move, Grip, Type } from "lucide-react";
 import { useApp } from "../lib/store";
 import { commitTextDraft } from "../lib/text-editing";
 import { Button, IconButton } from "./ui";
 
-let font: Promise<FontFace> | undefined;
-function loadEditorFont() {
-  return (font ||= new FontFace(
-    "Noto Sans Bengali",
-    `url(${import.meta.env.BASE_URL}fonts/NotoSansBengali.ttf)`,
-  )
-    .load()
-    .then((loaded) => {
-      document.fonts.add(loaded);
-      return loaded;
-    })
-    .catch((error) => {
-      font = undefined;
-      throw error;
-    }));
-}
+import { loadEditorFont } from "../lib/editor-font";
+import { useElementGesture } from "../hooks/use-element-gesture";
 
 export function InlineTextEditor({
   page,
@@ -37,6 +23,22 @@ export function InlineTextEditor({
   );
   const busy = useApp((s) => !!s.busy);
   const input = useRef<HTMLTextAreaElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const { begin, phase, cancel } = useElementGesture({
+    root,
+    rect: draft?.rect || [0, 0, 1, 1],
+    scale,
+    pageWidth,
+    pageHeight,
+    onStart: () => input.current?.focus({ preventScroll: true }),
+    onCommit: (rect) => {
+      const current = useApp.getState().textDraft;
+      if (!current || current.page !== page || current.id !== draft?.id)
+        return false;
+      useApp.setState({ textDraft: { ...current, rect } });
+      return true;
+    },
+  });
   const composing = useRef(false);
   const [fontReady, setFontReady] = useState(false);
   const identity = draft ? `${page}:${draft.id ?? "new"}` : "";
@@ -76,7 +78,7 @@ export function InlineTextEditor({
   }, [identity]);
   useLayoutEffect(() => {
     const element = input.current;
-    if (!draft || !element) return;
+    if (!draft || !element || phase) return;
     element.style.height = "0px";
     const contentHeight = element.scrollHeight;
     element.style.height = "100%";
@@ -106,8 +108,9 @@ export function InlineTextEditor({
   const toolbarBelow = draft.rect[1] * scale < 54;
   return (
     <div
+      ref={root}
       data-text-editor
-      className="absolute z-30 border border-lime-500 bg-white shadow-sm ring-2 ring-lime-500/20"
+      className="absolute z-30 border border-lime-500 bg-transparent shadow-sm ring-2 ring-lime-500/20"
       style={{
         left: draft.rect[0] * scale,
         top: draft.rect[1] * scale,
@@ -152,6 +155,7 @@ export function InlineTextEditor({
           if (event.nativeEvent.isComposing || composing.current) return;
           if (event.key === "Escape") {
             event.preventDefault();
+            cancel();
             useApp.setState({ textDraft: null });
           }
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
@@ -165,10 +169,19 @@ export function InlineTextEditor({
         style={{
           left: Math.max(
             -draft.rect[0] * scale,
-            Math.min(0, (pageWidth - draft.rect[0]) * scale - 140),
+            Math.min(0, (pageWidth - draft.rect[0]) * scale - 230),
           ),
         }}
       >
+        <IconButton
+          label="Drag text"
+          className="h-9 w-9 touch-none cursor-move"
+          onPointerDown={(event) => {
+            if (!busy && !composing.current) begin(event, "move");
+          }}
+        >
+          <Move size={15} />
+        </IconButton>
         <Button
           variant="primary"
           className="min-h-9 px-3 text-xs"
@@ -179,14 +192,35 @@ export function InlineTextEditor({
           Done
         </Button>
         <IconButton
+          label="Text size and color"
+          className="h-9 w-9"
+          onClick={() => useApp.setState({ appearanceOpen: true })}
+        >
+          <Type size={16} />
+        </IconButton>
+        <IconButton
           label="Cancel text editing"
           className="h-9 w-9"
           disabled={busy}
-          onClick={() => useApp.setState({ textDraft: null })}
+          onClick={() => {
+            cancel();
+            useApp.setState({ textDraft: null });
+          }}
         >
           <X size={15} />
         </IconButton>
       </div>
+      <button
+        type="button"
+        aria-label="Resize text"
+        title="Resize text box — keeps text size"
+        className="absolute -bottom-3 -right-3 flex h-7 w-7 touch-none cursor-nwse-resize items-center justify-center rounded-lg border border-lime-600 bg-lime-400 text-studio-950 shadow-sm"
+        onPointerDown={(event) => {
+          if (!busy && !composing.current) begin(event, "resize");
+        }}
+      >
+        <Grip size={14} />
+      </button>
     </div>
   );
 }

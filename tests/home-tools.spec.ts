@@ -120,14 +120,12 @@ test("home presents real tools, a searchable catalogue, and responsive task layo
 
 test("compress downloads a valid copy without opening an editor or making external requests", async ({
   page,
+  baseURL,
 }, info) => {
   const external: string[] = [],
     errors: string[] = [];
   page.on("request", (r) => {
-    if (
-      !r.url().startsWith("http://127.0.0.1:4173") &&
-      !/^(blob:|data:)/.test(r.url())
-    )
+    if (!r.url().startsWith(baseURL!) && !/^(blob:|data:)/.test(r.url()))
       external.push(r.url());
   });
   page.on("pageerror", (e) => errors.push(e.message));
@@ -301,7 +299,7 @@ test("password retry and invalid input stay in the tool, and home commands launc
   await page.getByPlaceholder("Search tools and commands…").fill("compress");
   await page
     .getByRole("dialog", { name: "Find your flow" })
-    .getByRole("button", { name: /Compress PDF/ })
+    .getByRole("option", { name: /Compress PDF/ })
     .click();
   await upload(page, [
     {

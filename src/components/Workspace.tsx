@@ -44,9 +44,17 @@ export function Workspace() {
     mode = useApp((s) => s.workspaceMode),
     documentId = useApp((s) => s.id);
   const options = useApp((s) => s.appearanceOpen);
-  const setOptions = (appearanceOpen: boolean) => {
+  const setOptions = (appearanceOpen: boolean, restoreFocus = true) => {
+    if (!appearanceOpen) {
+      const active = document.activeElement as HTMLElement | null;
+      if (
+        active?.closest("[data-appearance-controls]") &&
+        active.matches("input,textarea,select")
+      )
+        active.blur();
+    }
     useApp.setState({ appearanceOpen });
-    if (!appearanceOpen)
+    if (!appearanceOpen && restoreFocus)
       requestAnimationFrame(() =>
         document
           .querySelector<HTMLTextAreaElement>("[data-text-editor] textarea")
@@ -59,13 +67,23 @@ export function Workspace() {
   useEffect(() => {
     if (!options) return;
     const close = (event: KeyboardEvent) => {
+      const state = useApp.getState();
+      if (state.dialog || state.prompt || state.error) return;
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
       setOptions(false);
     };
+    const outside = (event: PointerEvent) => {
+      if (!(event.target as Element).closest("[data-appearance-controls]"))
+        setOptions(false, false);
+    };
     window.addEventListener("keydown", close, true);
-    return () => window.removeEventListener("keydown", close, true);
+    document.addEventListener("pointerdown", outside, true);
+    return () => {
+      window.removeEventListener("keydown", close, true);
+      document.removeEventListener("pointerdown", outside, true);
+    };
   }, [options]);
   useEffect(() => {
     if (!fillSign) return;
@@ -389,10 +407,6 @@ export function Workspace() {
               </IconButton>
               {options && (
                 <>
-                  <div
-                    className="fixed inset-0 z-20"
-                    onClick={() => setOptions(false)}
-                  />
                   <div
                     role="region"
                     aria-label="Appearance"

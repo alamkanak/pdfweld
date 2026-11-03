@@ -14,16 +14,14 @@ async function open(page: import("@playwright/test").Page) {
 }
 test("studio opens, reads, annotates, exports, and recovers without external requests", async ({
   page,
+  baseURL,
   isMobile,
 }, testInfo) => {
   const errors: string[] = [],
     external: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("request", (r) => {
-    if (
-      !r.url().startsWith("http://127.0.0.1:4173") &&
-      !/^(blob:|data:)/.test(r.url())
-    )
+    if (!r.url().startsWith(baseURL!) && !/^(blob:|data:)/.test(r.url()))
       external.push(r.url());
   });
   await open(page);
@@ -118,7 +116,7 @@ test("tools, search, page management and phone sheets are usable", async ({
     page.getByRole("dialog", { name: "Find your flow" }),
   ).toBeVisible();
   await page.getByPlaceholder("Search tools and commands…").fill("organize");
-  await page.getByRole("button", { name: /Organize pages/ }).click();
+  await page.getByRole("option", { name: /Organize pages/ }).click();
   await expect(
     page.getByRole("dialog", { name: "A place for every page" }),
   ).toBeVisible();

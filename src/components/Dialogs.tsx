@@ -135,6 +135,8 @@ function SignaturePicker({ onClose }: { onClose: () => void }) {
 }
 function Commands({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const list = useRef<HTMLDivElement>(null);
   const hasDocument = useApp((state) => !!state.info);
   const tools = (
     hasDocument
@@ -146,48 +148,109 @@ function Commands({ onClose }: { onClose: () => void }) {
   ).filter((t) =>
     (t.label + " " + t.description).toLowerCase().includes(query.toLowerCase()),
   );
+  const selected = tools.length ? Math.min(active, tools.length - 1) : -1;
+  useEffect(() => {
+    list.current
+      ?.querySelector('[aria-selected="true"]')
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selected, query]);
+  const choose = (index: number) => {
+    const tool = tools[index];
+    if (!tool) return;
+    onClose();
+    if (hasDocument) void runAction(tool.id);
+    else startHomeTool(tool.id as import("../lib/home-tools").HomeToolId);
+  };
   return (
     <Modal
       title="Find your flow"
       description="Every tool, a few keystrokes away."
       onClose={onClose}
     >
-      <SearchField
-        placeholder="Search tools and commands…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="mb-3 w-full"
-        autoFocus
-      />
-      <div className="max-h-[52dvh] overflow-y-auto">
-        {tools.map((t, i) => (
-          <button
-            key={`${t.group}-${t.id}`}
-            className="group flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-white/5"
-            onClick={() => {
-              onClose();
-              if (hasDocument) void runAction(t.id);
-              else
-                startHomeTool(t.id as import("../lib/home-tools").HomeToolId);
-            }}
-          >
-            <span className="rounded-lg bg-white/[.04] p-2.5 text-studio-400 group-hover:text-lime-300">
-              <t.icon size={17} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <strong className="block text-xs font-medium text-studio-200">
-                {t.label}
-              </strong>
-              <span className="mt-1 block truncate text-xs text-studio-600">
-                {t.description}
+      <div
+        onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) return;
+          if (["ArrowDown", "ArrowUp"].includes(event.key)) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (tools.length)
+              setActive(
+                (index) =>
+                  (index +
+                    (event.key === "ArrowDown" ? 1 : -1) +
+                    tools.length) %
+                  tools.length,
+              );
+          } else if (event.key === "Enter") {
+            event.preventDefault();
+            event.stopPropagation();
+            choose(selected);
+          }
+        }}
+      >
+        <SearchField
+          placeholder="Search tools and commands…"
+          role="combobox"
+          aria-label="Search tools and commands"
+          aria-expanded="true"
+          aria-autocomplete="list"
+          aria-controls="command-results"
+          aria-activedescendant={
+            selected >= 0 ? `command-result-${selected}` : undefined
+          }
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setActive(0);
+          }}
+          className="mb-3 w-full"
+          autoFocus
+        />
+        <div
+          ref={list}
+          id="command-results"
+          role="listbox"
+          aria-label="Tools and commands"
+          className="max-h-[52dvh] overflow-y-auto"
+        >
+          {tools.map((t, i) => (
+            <button
+              key={`${t.group}-${t.id}`}
+              id={`command-result-${i}`}
+              type="button"
+              role="option"
+              tabIndex={-1}
+              aria-selected={selected === i}
+              className={clsx(
+                "group flex w-full items-center gap-3 rounded-lg p-3 text-left",
+                selected === i
+                  ? "bg-lime-400/10 ring-1 ring-inset ring-lime-400/25"
+                  : "hover:bg-white/5",
+              )}
+              onPointerMove={() => setActive(i)}
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={() => choose(i)}
+            >
+              <span className="rounded-lg bg-white/[.04] p-2.5 text-studio-400 group-hover:text-lime-300">
+                <t.icon size={17} />
               </span>
-            </span>
-            <ChevronRight size={13} className="text-studio-600" />
-          </button>
-        ))}
-        {!tools.length && (
-          <Empty icon={<Search size={22} />}>No tools match that search.</Empty>
-        )}
+              <span className="min-w-0 flex-1">
+                <strong className="block text-xs font-medium text-studio-200">
+                  {t.label}
+                </strong>
+                <span className="mt-1 block truncate text-xs text-studio-600">
+                  {t.description}
+                </span>
+              </span>
+              <ChevronRight size={13} className="text-studio-600" />
+            </button>
+          ))}
+          {!tools.length && (
+            <Empty icon={<Search size={22} />}>
+              No tools match that search.
+            </Empty>
+          )}
+        </div>
       </div>
     </Modal>
   );

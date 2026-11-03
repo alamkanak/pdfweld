@@ -176,7 +176,12 @@ export class PDFEngine {
     this.name = name;
     return this.info();
   }
-  render(index: number, scale: number, clip?: Rect): RenderResult {
+  render(
+    index: number,
+    scale: number,
+    clip?: Rect,
+    omitAnnotation?: number,
+  ): RenderResult {
     const started = performance.now();
     return usePage(this.require(), index, (p) => {
       const bounds = p.getBounds();
@@ -193,14 +198,22 @@ export class PDFEngine {
       pix.clear(255);
       const device = new mupdf.DrawDevice(mupdf.Matrix.identity, pix);
       try {
-        p.run(device, [
+        const transform: import("mupdf").Matrix = [
           scale,
           0,
           0,
           scale,
           -(bounds[0] + r[0]) * scale,
           -(bounds[1] + r[1]) * scale,
-        ]);
+        ];
+        if (omitAnnotation === undefined) p.run(device, transform);
+        else {
+          p.runPageContents(device, transform);
+          for (const annotation of p.getAnnotations())
+            if (annotation.getObject().asIndirect() !== omitAnnotation)
+              annotation.run(device, transform);
+          p.runPageWidgets(device, transform);
+        }
         device.close();
         return {
           pixels: new Uint8ClampedArray(pix.getPixels()),

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 test("OCR loads local workers and models and produces searchable text", async ({
   page,
+  baseURL,
   browserName,
   isMobile,
 }) => {
@@ -11,10 +12,7 @@ test("OCR loads local workers and models and produces searchable text", async ({
   test.setTimeout(120000);
   const external: string[] = [];
   page.on("request", (r) => {
-    if (
-      !r.url().startsWith("http://127.0.0.1:4173") &&
-      !/^(blob:|data:)/.test(r.url())
-    )
+    if (!r.url().startsWith(baseURL!) && !/^(blob:|data:)/.test(r.url()))
       external.push(r.url());
   });
   await page.goto("/");
@@ -25,7 +23,7 @@ test("OCR loads local workers and models and produces searchable text", async ({
   );
   await page.keyboard.press("ControlOrMeta+k");
   await page.getByPlaceholder("Search tools and commands…").fill("recognize");
-  await page.getByRole("button", { name: /Recognize text/ }).click();
+  await page.getByRole("option", { name: /Recognize text/ }).click();
   await page
     .getByRole("button", { name: "Recognize text", exact: true })
     .click();
