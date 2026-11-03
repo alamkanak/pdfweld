@@ -78,7 +78,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
           ],
         },
         workbox: {
-          globPatterns: ["**/*.{js,css,html,svg,woff2,ttf,wasm}"],
+          globPatterns: ["**/*.{js,css,html,svg,woff2,ttf,otf,wasm}"],
           globIgnores: ["**/ocr/**", "tools/**", "404.html"],
           additionalManifestEntries: [
             { url: "field-notes.pdf", revision: "1" },

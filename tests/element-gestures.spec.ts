@@ -62,11 +62,14 @@ test("resizing wraps the live text at a fixed font size and commits only once", 
   const preview = page.locator("[data-text-preview]");
   await expect(preview).toBeVisible();
   const live = await preview.evaluate((node) => {
-    const range = document.createRange();
-    range.selectNodeContents(node);
+    const input = node.querySelector("textarea")!;
+    const previousHeight = input.style.height;
+    input.style.height = "0px";
+    const contentHeight = input.scrollHeight;
+    input.style.height = previousHeight;
     return {
       size: parseFloat(getComputedStyle(node).fontSize),
-      lines: range.getClientRects().length,
+      lines: contentHeight / parseFloat(getComputedStyle(input).lineHeight),
       width: node.clientWidth,
     };
   });

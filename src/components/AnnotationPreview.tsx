@@ -4,6 +4,7 @@ import { useApp } from "../lib/store";
 import { loadEditorFont } from "../lib/editor-font";
 import { annotationColor } from "../lib/text-editing";
 import type { AnnotationInfo } from "../lib/types";
+import { PdfTextInput, pdfTextFont } from "./PdfTextInput";
 
 export function TextPreview({
   annotation,
@@ -21,14 +22,22 @@ export function TextPreview({
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap [overflow-wrap:anywhere]"
       style={{
-        fontFamily: "Arial, 'Noto Sans Bengali', sans-serif",
+        fontFamily: pdfTextFont,
         fontSize: (annotation.fontSize || 18) * scale,
         lineHeight: 1.2,
         color: annotationColor(annotation),
-        opacity: annotation.opacity ?? 1,
       }}
     >
-      {annotation.text}
+      <PdfTextInput
+        readOnly
+        tabIndex={-1}
+        aria-hidden="true"
+        value={annotation.text}
+        fontSize={annotation.fontSize || 18}
+        scale={scale}
+        color={annotationColor(annotation)}
+        opacity={annotation.opacity ?? 1}
+      />
     </div>
   );
 }

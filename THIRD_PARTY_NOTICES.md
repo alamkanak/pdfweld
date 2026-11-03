@@ -15,6 +15,7 @@ PDFWeld is licensed under GNU AGPL version 3. The complete application source is
 - English OCR model from https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz ; Tesseract tessdata is Apache-2.0.
 - DM Sans and Manrope fonts: SIL Open Font License 1.1, distributed through Fontsource.
 - Noto Sans Bengali: Copyright 2025 The Noto Project Authors (https://github.com/notofonts/bengali), SIL Open Font License 1.1. Bundled locally from the Google Fonts distribution; full license at `public/fonts/OFL-NotoSansBengali.txt`. MuPDF shapes and embeds Bengali glyphs in text annotations without contacting a font service.
+- Nimbus Sans Regular: URW Base35 fonts, Artifex Software, release 20200910, https://github.com/ArtifexSoftware/urw-base35-fonts . AGPL-3.0 with the upstream document-embedding exception. The unchanged OTF font and full license/exception are bundled in `public/fonts/`. The editor uses it to match MuPDF's Helvetica metrics across devices.
 - Vite, Vite PWA, Workbox, TypeScript, Playwright and Vitest: retain their respective dependency license files in the installed npm packages.
 
 The Field Notes sample, architectural vector illustration, app icon, and benchmark fixture were created for this project. Procreate was studied as an interaction reference; its branding, icons, screenshots, and artwork are not included in the application. PDFCraft was researched as a feature reference; its code and branding are not incorporated into this implementation.

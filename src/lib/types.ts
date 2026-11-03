@@ -92,6 +92,7 @@ export interface TextDraft {
   fontSize: number;
   opacity: number;
   replaceRect?: Rect;
+  fixedSize?: boolean;
 }
 export interface FieldInfo {
   id: number;

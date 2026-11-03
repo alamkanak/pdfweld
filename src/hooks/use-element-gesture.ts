@@ -18,7 +18,7 @@ type Options = {
   pageHeight: number;
   preserveAspect?: boolean;
   onStart?: () => void;
-  onCommit: (rect: Rect) => boolean | Promise<boolean>;
+  onCommit: (rect: Rect, mode: ElementGesture) => boolean | Promise<boolean>;
 };
 
 /** Pointer ownership survives selection renders and stays on a stable target.
@@ -165,7 +165,7 @@ export function useElementGesture(options: Options) {
       place(g.next);
       pending.current++;
       try {
-        const ok = await latest.current.onCommit(g.next);
+        const ok = await latest.current.onCommit(g.next, g.mode);
         if (!ok && !gesture.current && mounted.current)
           place(latest.current.rect);
       } finally {

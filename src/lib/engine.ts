@@ -450,7 +450,9 @@ export class PDFEngine {
         // FreeText's /C is its background, while /DA controls the glyphs.
         // Giving both the same color makes the text disappear in a solid box.
         if (type !== "FreeText") a.setColor(rgb(m.color));
-        if (a.hasBorder()) a.setBorderWidth(m.width);
+        // FreeText uses width as its font size, never as a border width.
+        // Changing that border after setRect insets the rectangle in MuPDF.
+        if (type !== "FreeText" && a.hasBorder()) a.setBorderWidth(m.width);
         a.setOpacity(m.opacity);
         a.setFlags(mupdf.PDFAnnotation.IS_PRINT);
         if (type === "Ink") a.setInkList([(m.points || []).map(pt)]);
@@ -477,10 +479,11 @@ export class PDFEngine {
         if (type === "FreeText") {
           a.setDefaultAppearance(
             "Helv",
-            m.width > 6 ? m.width : 14,
+            Number.isFinite(m.width) && m.width >= 6 ? m.width : 14,
             rgb(m.color),
           );
           a.setBorderWidth(0);
+          a.setRect(rect);
         }
         if (type === "Text") a.setIcon("Comment");
         if (type === "Redact") a.getObject().put("IC", [0, 0, 0]);
@@ -689,15 +692,15 @@ export class PDFEngine {
               .find((a) => a.getObject().asIndirect() === op.id);
             if (!a) throw new Error("Annotation no longer exists.");
             if (typeof op.text === "string") a.setContents(op.text);
-            if (Array.isArray(op.rect)) {
-              const b = p.getBounds();
-              a.setRect(
-                (op.rect as Rect).map(
-                  (v, i) => v + (i % 2 ? b[1] : b[0]),
-                ) as Rect,
-              );
-            }
             const freeText = a.getType() === "FreeText";
+            const b = p.getBounds();
+            const targetRect = Array.isArray(op.rect)
+              ? ((op.rect as Rect).map(
+                  (v, i) => v + (i % 2 ? b[1] : b[0]),
+                ) as Rect)
+              : freeText
+                ? a.getBounds()
+                : undefined;
             if (typeof op.color === "string" && !freeText)
               a.setColor(rgb(op.color));
             if (typeof op.opacity === "number")
@@ -716,6 +719,9 @@ export class PDFEngine {
               a.getObject().delete("C");
               a.setBorderWidth(0);
             }
+            // Set geometry last: removing a legacy FreeText border must not
+            // shrink or move the box when finishing an edit or restyling it.
+            if (targetRect) a.setRect(targetRect);
             a.setModificationDate(new Date());
             a.update();
             p.update();

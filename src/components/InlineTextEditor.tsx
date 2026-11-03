@@ -6,6 +6,7 @@ import { Button, IconButton } from "./ui";
 
 import { loadEditorFont } from "../lib/editor-font";
 import { useElementGesture } from "../hooks/use-element-gesture";
+import { PdfTextInput } from "./PdfTextInput";
 
 export function InlineTextEditor({
   page,
@@ -31,11 +32,17 @@ export function InlineTextEditor({
     pageWidth,
     pageHeight,
     onStart: () => input.current?.focus({ preventScroll: true }),
-    onCommit: (rect) => {
+    onCommit: (rect, mode) => {
       const current = useApp.getState().textDraft;
       if (!current || current.page !== page || current.id !== draft?.id)
         return false;
-      useApp.setState({ textDraft: { ...current, rect } });
+      useApp.setState({
+        textDraft: {
+          ...current,
+          rect,
+          fixedSize: current.fixedSize || mode === "resize",
+        },
+      });
       return true;
     },
   });
@@ -78,10 +85,11 @@ export function InlineTextEditor({
   }, [identity]);
   useLayoutEffect(() => {
     const element = input.current;
-    if (!draft || !element || phase) return;
+    if (!draft || !element || phase || draft.fixedSize) return;
+    const previousHeight = element.style.height;
     element.style.height = "0px";
     const contentHeight = element.scrollHeight;
-    element.style.height = "100%";
+    element.style.height = previousHeight;
     const height = Math.min(
       pageHeight - draft.rect[1],
       Math.max(draft.rect[3] - draft.rect[1], (contentHeight + 4) / scale),
@@ -110,7 +118,7 @@ export function InlineTextEditor({
     <div
       ref={root}
       data-text-editor
-      className="absolute z-30 border border-lime-500 bg-transparent shadow-sm ring-2 ring-lime-500/20"
+      className="absolute z-30 bg-transparent shadow-sm outline outline-1 outline-lime-500 ring-2 ring-lime-500/20"
       style={{
         left: draft.rect[0] * scale,
         top: draft.rect[1] * scale,
@@ -119,21 +127,17 @@ export function InlineTextEditor({
       }}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <textarea
+      <PdfTextInput
         ref={input}
         aria-label="Text on PDF"
         placeholder="Type here…"
         value={draft.text}
         disabled={busy}
         spellCheck={false}
-        className="h-full w-full resize-none overflow-y-auto bg-transparent p-0 text-black outline-none placeholder:text-stone-400 [color-scheme:light]"
-        style={{
-          fontFamily: "Arial, 'Noto Sans Bengali', sans-serif",
-          fontSize: draft.fontSize * scale,
-          lineHeight: 1.2,
-          color: draft.color,
-          opacity: draft.opacity,
-        }}
+        fontSize={draft.fontSize}
+        scale={scale}
+        color={draft.color}
+        opacity={draft.opacity}
         onCompositionStart={() => {
           composing.current = true;
         }}

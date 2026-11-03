@@ -43,6 +43,7 @@ export async function editText(page: number, annotation: AnnotationInfo) {
       color: annotationColor(a),
       fontSize: a.fontSize || 18,
       opacity: a.opacity ?? 1,
+      fixedSize: true,
     },
   });
 }

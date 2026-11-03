@@ -395,6 +395,9 @@ export const PageView = memo(function PageView({
         text = line.text;
       }
       if (kind === "text" || kind === "replace") {
+        const fixedSize =
+          kind === "replace" ||
+          (rect[2] - rect[0] >= 8 && rect[3] - rect[1] >= 8);
         if (
           kind === "text" &&
           (rect[2] - rect[0] < 8 || rect[3] - rect[1] < 8)
@@ -417,6 +420,7 @@ export const PageView = memo(function PageView({
             fontSize,
             opacity: s.opacity,
             replaceRect: kind === "replace" ? [...rect] : undefined,
+            fixedSize,
           },
           selectedAnnotation: null,
         });

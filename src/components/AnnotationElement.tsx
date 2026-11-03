@@ -16,6 +16,7 @@ import { annotationColor } from "../lib/text-editing";
 import { useElementGesture } from "../hooks/use-element-gesture";
 import { transformAnnotation } from "../lib/annotation-operations";
 import { AnnotationBackground, TextPreview } from "./AnnotationPreview";
+import { loadEditorFont } from "../lib/editor-font";
 
 export function annotationLabel(a: AnnotationInfo) {
   return a.type === "FreeText"
@@ -78,6 +79,10 @@ export function AnnotationElement({
   });
   const dragging = phase !== null;
   useEffect(() => {
+    if (selected && a.type === "FreeText") {
+      void loadEditorFont().catch((error) => useApp.getState().fail(error));
+      return;
+    }
     if (!selected || a.type === "FreeText") return;
     let cancelled = false;
     engine
@@ -123,10 +128,10 @@ export function AnnotationElement({
         aria-label={`Move ${label}`}
         aria-pressed={selected}
         className={clsx(
-          "absolute min-h-6 min-w-6 touch-none select-none cursor-move outline-none focus-visible:ring-2 focus-visible:ring-lime-500",
+          "absolute touch-none select-none cursor-move outline-none focus-visible:ring-2 focus-visible:ring-lime-500",
           editing && "invisible",
           selected
-            ? "z-20 border border-lime-500 ring-1 ring-lime-500/30"
+            ? "z-20 outline outline-1 outline-lime-500 ring-1 ring-lime-500/30"
             : "z-10 hover:ring-1 hover:ring-lime-500/60",
         )}
         style={{
@@ -196,6 +201,10 @@ export function AnnotationElement({
           }
         }}
       >
+        <span
+          aria-hidden="true"
+          className="absolute left-1/2 top-1/2 h-full min-h-6 w-full min-w-6 -translate-x-1/2 -translate-y-1/2"
+        />
         {dragging && a.type === "FreeText" && (
           <TextPreview annotation={a} scale={scale} />
         )}
