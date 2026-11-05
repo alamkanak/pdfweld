@@ -1,5 +1,11 @@
 import mupdf from "mupdf";
 import { parsePages } from "./page-ranges";
+import {
+  coversTextQuad,
+  isTextMarkup,
+  mergeTextQuads,
+  validTextQuad,
+} from "./text-markup";
 import { burnSignatures, normalizeImageAppearances } from "./pdf-signatures";
 import {
   inspectTaskFile,
@@ -40,16 +46,6 @@ const rgb = (hex: string) =>
     number,
     number,
   ];
-const rectQuad = (r: Rect): Quad => [
-  r[0],
-  r[1],
-  r[2],
-  r[1],
-  r[0],
-  r[3],
-  r[2],
-  r[3],
-];
 const bytes = (b: ReturnType<PDFDocument["saveToBuffer"]>) => {
   try {
     return new Uint8Array(b.asUint8Array());
@@ -280,13 +276,14 @@ export class PDFEngine {
           beginLine: (bbox) => {
             line = { text: "", rect: offset(bbox), size: 12, chars: [] };
           },
-          onChar: (c, _o, _f, size, q) => {
+          onChar: (c, origin, _f, size, q) => {
             if (line) {
               line.text += c;
               line.size = size;
               line.chars.push({
                 text: c,
                 size,
+                origin: [origin[0] - b[0], origin[1] - b[1]],
                 quad: q.map((v, i) => v - (i % 2 ? b[1] : b[0])),
               });
             }
@@ -388,6 +385,39 @@ export class PDFEngine {
       )
     )
       throw new Error("This document restricts this operation.");
+    let markupQuads: Quad[] = [];
+    if (isTextMarkup(m.tool)) {
+      markupQuads = usePage(d, m.page, (page) => {
+        const bounds = page.getBounds();
+        const type =
+          m.tool === "highlight"
+            ? "Highlight"
+            : m.tool === "underline"
+              ? "Underline"
+              : "StrikeOut";
+        const covered = page
+          .getAnnotations()
+          .filter((a) => a.getType() === type)
+          .flatMap((a) => a.getQuadPoints());
+        const selected = (m.quads || [])
+          .filter(validTextQuad)
+          .map(
+            (q) => q.map((v, i) => v + (i % 2 ? bounds[1] : bounds[0])) as Quad,
+          );
+        const fresh: Quad[] = [],
+          seen = new Set<string>();
+        for (const quad of selected)
+          if (
+            !seen.has(quad.join(",")) &&
+            !covered.some((existing) => coversTextQuad(existing, quad))
+          ) {
+            fresh.push(quad);
+            seen.add(quad.join(","));
+          }
+        return mergeTextQuads(fresh);
+      });
+      if (!markupQuads.length) return { ...this.info(), unchanged: true };
+    }
     return this.mutate(`Add ${m.tool}`, () =>
       usePage(d, m.page, (p) => {
         const b = p.getBounds();
@@ -492,18 +522,7 @@ export class PDFEngine {
           );
           if (m.tool === "arrow") a.setLineEndingStyles("None", "ClosedArrow");
         } else if (["Highlight", "Underline", "StrikeOut"].includes(type)) {
-          const text = p.toStructuredText("");
-          let quads: Quad[] = [];
-          try {
-            quads = text.highlight([rect[0], rect[1]], [rect[2], rect[3]]);
-          } finally {
-            text.destroy();
-          }
-          a.setQuadPoints(
-            m.quads?.map(
-              (q) => q.map((v, i) => v + (i % 2 ? b[1] : b[0])) as Quad,
-            ) || (quads.length ? quads : [rectQuad(rect)]),
-          );
+          a.setQuadPoints(markupQuads);
         } else a.setRect(rect);
         if (type === "FreeText") {
           a.setDefaultAppearance(

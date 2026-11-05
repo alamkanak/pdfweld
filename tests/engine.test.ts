@@ -24,6 +24,9 @@ const mark = (tool: Tool, extra: Partial<Mark> = {}): Mark => ({
   width: 2,
   opacity: 1,
   author: "Tester",
+  ...(["highlight", "underline", "strike"].includes(tool)
+    ? { quads: [[42, 100, 250, 100, 42, 140, 250, 140]] }
+    : {}),
   ...extra,
 });
 describe("PDF engine round trips", () => {

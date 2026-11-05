@@ -16,6 +16,8 @@ import clsx from "clsx";
 import { AnnotationElement } from "./AnnotationElement";
 import { InlineTextEditor } from "./InlineTextEditor";
 import { editText } from "../lib/text-editing";
+import { TextSelection } from "./TextSelection";
+import { isTextMarkup } from "../lib/text-markup";
 const paint = (canvas: HTMLCanvasElement, result: RenderResult) => {
   canvas.width = result.width;
   canvas.height = result.height;
@@ -255,7 +257,7 @@ export const PageView = memo(function PageView({
     ctx.lineWidth = s.width;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.globalAlpha = kind === "highlight" ? 0.3 : s.opacity;
+    ctx.globalAlpha = s.opacity;
     const [start, end] = [points[0], points[points.length - 1]];
     if (kind === "ink" || kind === "signature") {
       ctx.beginPath();
@@ -292,8 +294,7 @@ export const PageView = memo(function PageView({
         ctx.fillStyle = "#000";
         ctx.globalAlpha = 0.5;
         ctx.fillRect(r[0], r[1], r[2], r[3]);
-      } else if (kind === "highlight") ctx.fillRect(r[0], r[1], r[2], r[3]);
-      else ctx.strokeRect(r[0], r[1], r[2], r[3]);
+      } else ctx.strokeRect(r[0], r[1], r[2], r[3]);
     }
     ctx.restore();
   };
@@ -301,6 +302,7 @@ export const PageView = memo(function PageView({
     if (
       e.button !== 0 ||
       e.isPrimary === false ||
+      isTextMarkup(tool) ||
       useApp.getState().busy ||
       useApp.getState().textDraft
     )
@@ -609,89 +611,91 @@ export const PageView = memo(function PageView({
           clip={clip}
         />
       ))}
+      {details && (tool === "select" || isTextMarkup(tool)) && (
+        <TextSelection
+          page={page}
+          lines={details.lines}
+          tool={tool}
+          scale={scale}
+        />
+      )}
       {details && tool === "select" && (
         <svg
-          className="absolute inset-0 h-full w-full overflow-visible"
+          className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
           viewBox={`0 0 ${p.width} ${p.height}`}
         >
-          <g className="select-text" fill="transparent">
-            {details.lines.map((line, i) => (
-              <text
+          {tool === "select" &&
+            details.links.map((link, i) => (
+              <a
                 key={i}
-                x={line.rect[0]}
-                y={line.rect[3] - line.size * 0.15}
-                fontSize={line.size}
-                textLength={Math.max(1, line.rect[2] - line.rect[0])}
-                lengthAdjust="spacingAndGlyphs"
+                className="pointer-events-auto"
+                href={/^https?:\/\//i.test(link.uri) ? link.uri : undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (link.uri.startsWith("#page=")) {
+                    e.preventDefault();
+                    const n = parseInt(link.uri.slice(6)) - 1;
+                    document
+                      .querySelector(`[data-page="${n}"]`)
+                      ?.scrollIntoView({ block: "start", behavior: "smooth" });
+                  }
+                }}
               >
-                {line.text}
-              </text>
+                <rect
+                  x={link.rect[0]}
+                  y={link.rect[1]}
+                  width={link.rect[2] - link.rect[0]}
+                  height={link.rect[3] - link.rect[1]}
+                  fill="transparent"
+                  className="cursor-pointer hover:fill-blue-400/10"
+                />
+              </a>
             ))}
-          </g>
-          {details.links.map((link, i) => (
-            <a
-              key={i}
-              href={/^https?:\/\//i.test(link.uri) ? link.uri : undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => {
-                if (link.uri.startsWith("#page=")) {
-                  e.preventDefault();
-                  const n = parseInt(link.uri.slice(6)) - 1;
-                  document
-                    .querySelector(`[data-page="${n}"]`)
-                    ?.scrollIntoView({ block: "start", behavior: "smooth" });
-                }
-              }}
-            >
-              <rect
-                x={link.rect[0]}
-                y={link.rect[1]}
-                width={link.rect[2] - link.rect[0]}
-                height={link.rect[3] - link.rect[1]}
-                fill="transparent"
-                className="cursor-pointer hover:fill-blue-400/10"
-              />
-            </a>
-          ))}
           {/* Widget appearances are already in the PDF raster. Paint the HTML
               value only while focused, against an opaque input background. */}
-          {details.fields.map((f) => (
-            <foreignObject
-              key={`${f.id}-${f.value}`}
-              x={f.rect[0]}
-              y={f.rect[1]}
-              width={f.rect[2] - f.rect[0]}
-              height={f.rect[3] - f.rect[1]}
-            >
-              <div className="flex h-full w-full items-center">
-                <input
-                  aria-label={f.label || f.name}
-                  type={/check|radio/i.test(f.type) ? "checkbox" : "text"}
-                  defaultValue={f.value}
-                  defaultChecked={f.value !== "Off" && f.value !== ""}
-                  disabled={f.readOnly}
-                  className={clsx(
-                    "h-full w-full border border-blue-400/30 bg-blue-300/10 px-1 text-base outline-none focus:bg-blue-100",
-                    /check|radio/i.test(f.type)
-                      ? "accent-lime-500 text-black"
-                      : "text-transparent caret-black focus:text-black",
-                  )}
-                  onBlur={(e) => {
-                    if (
-                      !/check|radio/i.test(f.type) &&
-                      e.target.value !== f.value
-                    )
-                      void sFill(page, f.id, e.target.value);
-                  }}
-                  onChange={(e) => {
-                    if (/check|radio/i.test(f.type))
-                      void sFill(page, f.id, e.target.checked ? "Yes" : "Off");
-                  }}
-                />
-              </div>
-            </foreignObject>
-          ))}
+          {tool === "select" &&
+            details.fields.map((f) => (
+              <foreignObject
+                className="pointer-events-auto"
+                key={`${f.id}-${f.value}`}
+                x={f.rect[0]}
+                y={f.rect[1]}
+                width={f.rect[2] - f.rect[0]}
+                height={f.rect[3] - f.rect[1]}
+              >
+                <div className="flex h-full w-full items-center">
+                  <input
+                    aria-label={f.label || f.name}
+                    type={/check|radio/i.test(f.type) ? "checkbox" : "text"}
+                    defaultValue={f.value}
+                    defaultChecked={f.value !== "Off" && f.value !== ""}
+                    disabled={f.readOnly}
+                    className={clsx(
+                      "h-full w-full border border-blue-400/30 bg-blue-300/10 px-1 text-base outline-none focus:bg-blue-100",
+                      /check|radio/i.test(f.type)
+                        ? "accent-lime-500 text-black"
+                        : "text-transparent caret-black focus:text-black",
+                    )}
+                    onBlur={(e) => {
+                      if (
+                        !/check|radio/i.test(f.type) &&
+                        e.target.value !== f.value
+                      )
+                        void sFill(page, f.id, e.target.value);
+                    }}
+                    onChange={(e) => {
+                      if (/check|radio/i.test(f.type))
+                        void sFill(
+                          page,
+                          f.id,
+                          e.target.checked ? "Yes" : "Off",
+                        );
+                    }}
+                  />
+                </div>
+              </foreignObject>
+            ))}
         </svg>
       )}
       {details &&
@@ -737,7 +741,7 @@ export const PageView = memo(function PageView({
           ))}
         </svg>
       )}
-      {visible && !["select", "hand"].includes(tool) && (
+      {visible && !["select", "hand"].includes(tool) && !isTextMarkup(tool) && (
         <canvas
           ref={ink}
           className={clsx(

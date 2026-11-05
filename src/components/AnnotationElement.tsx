@@ -23,7 +23,7 @@ export function annotationLabel(a: AnnotationInfo) {
     ? "text"
     : a.type === "Ink"
       ? "drawn signature or ink"
-      : a.text === "Signature"
+      : a.type === "Stamp" && a.text === "Signature"
         ? "signature"
         : a.type === "Stamp"
           ? "image or stamp"

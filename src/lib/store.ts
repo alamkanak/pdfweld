@@ -288,7 +288,8 @@ export const useApp = create<State>((set, get) => ({
   mark: async (mark) => {
     if (get().busy) return;
     try {
-      get().update(await engine.call("addMark", mark));
+      const info = await engine.call("addMark", mark);
+      if (!("unchanged" in info && info.unchanged)) get().update(info);
     } catch (e) {
       get().fail(e);
     }

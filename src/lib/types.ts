@@ -109,6 +109,7 @@ export interface TextChar {
   text: string;
   quad: number[];
   size: number;
+  origin?: Point;
 }
 export interface TextLine {
   text: string;
