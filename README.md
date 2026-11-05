@@ -100,6 +100,7 @@ This follows PDFCraft’s tool-first navigation: its [home recommendations](http
 - English OCR on selected pages through a local Tesseract worker and bundled model, producing an invisible searchable text layer while preserving the page image. Runtime/model downloads come from the same deployed site and are cached on demand.
 - Extracted-text document comparison and structural document diagnostics.
 - Keyboard shortcuts, command palette, keyboard-accessible dialogs with focus containment, mobile bottom sheets, safe-area layout, installed PWA, and cached offline reopening.
+- App updates finish pending text edits, save an editable recovery copy, and wait for activation before refreshing. The update prompt shows progress and offers retry on failure. Updates activated in another tab do not force this tab to reload its unsaved work; downloaded updates can be applied offline.
 
 ## Explicit boundaries
 

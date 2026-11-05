@@ -78,6 +78,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
           ],
         },
         workbox: {
+          clientsClaim: true,
           globPatterns: ["**/*.{js,css,html,svg,woff2,ttf,otf,wasm}"],
           globIgnores: ["**/ocr/**", "tools/**", "404.html"],
           additionalManifestEntries: [

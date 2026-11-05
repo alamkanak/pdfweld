@@ -9,7 +9,8 @@ import { chooseTool } from "./lib/actions";
 import { renderQueue } from "./lib/render-queue";
 import { engine } from "./lib/client";
 import { metrics } from "./lib/performance";
-import { useRegisterSW } from "virtual:pwa-register/react";
+import { AppUpdates } from "./components/AppUpdates";
+import { consumeUpdateReload } from "./lib/app-update";
 import type { Operation } from "./lib/types";
 import { installPublicNavigation } from "./seo/navigation";
 import { commitTextDraft } from "./lib/text-editing";
@@ -27,34 +28,6 @@ declare global {
       cache: () => ReturnType<typeof renderQueue.stats>;
     };
   }
-}
-function Updates() {
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW();
-  return needRefresh ? (
-    <div className="fixed bottom-6 right-6 z-[70] max-w-xs rounded-lg border border-white/10 bg-studio-800 p-3 shadow-panel">
-      <p className="text-sm text-white">A fresh studio is ready.</p>
-      <p className="mb-4 mt-2 text-xs leading-5 text-studio-400">
-        Export your work before updating.
-      </p>
-      <div className="flex gap-2">
-        <Button
-          variant="primary"
-          onClick={async () => {
-            await persist();
-            await updateServiceWorker(true);
-          }}
-        >
-          Update
-        </Button>
-        <Button variant="ghost" onClick={() => setNeedRefresh(false)}>
-          Later
-        </Button>
-      </div>
-    </div>
-  ) : null;
 }
 export default function App() {
   useEffect(installPublicNavigation, []);
@@ -112,6 +85,7 @@ export default function App() {
       }
     };
     const before = (e: BeforeUnloadEvent) => {
+      if (consumeUpdateReload()) return;
       if (useApp.getState().dirty || useApp.getState().textDraft?.text.trim()) {
         e.preventDefault();
       }
@@ -158,7 +132,7 @@ export default function App() {
       <Dialogs />
       <PromptDialog />
       <Notifications />
-      <Updates />
+      <AppUpdates />
     </ErrorBoundary>
   );
 }

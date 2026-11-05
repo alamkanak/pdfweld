@@ -388,9 +388,9 @@ export function startSignature() {
 }
 export async function persist(bytes?: Uint8Array) {
   const s = useApp.getState();
-  if (s.busy === "Opening document…") return;
-  if (!s.info) return;
-  if (!bytes && !s.dirty) return;
+  if (s.busy === "Opening document…") return false;
+  if (!s.info) return true;
+  if (!bytes && !s.dirty) return true;
   try {
     const data = bytes || (await engine.call("saveEditable"));
     let thumbnail: Uint8Array | undefined;
@@ -409,10 +409,12 @@ export async function persist(bytes?: Uint8Array) {
     });
     if (useApp.getState().id === s.id)
       useApp.setState({ autosaveStatus: "Saved in your library" });
+    return true;
   } catch {
     useApp.setState({
       autosaveStatus: "Recovery storage unavailable — export your PDF",
     });
+    return false;
   }
 }
 export function ask(
