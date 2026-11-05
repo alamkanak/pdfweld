@@ -4,13 +4,14 @@ import {
   type Ref,
   type TextareaHTMLAttributes,
 } from "react";
-import { loadEditorFont, editorFontsReady } from "../lib/editor-font";
+import { loadEditorFont } from "../lib/editor-font";
+import { DEFAULT_FONT, fontFamilyCSS } from "../lib/font-catalog";
 
-export const pdfTextFont =
-  "'PDFWeld Helvetica', Arial, 'Noto Sans Bengali', sans-serif";
-let browserBaseline: number | undefined;
-function baseline() {
-  if (browserBaseline !== undefined) return browserBaseline;
+export const pdfTextFont = fontFamilyCSS();
+const browserBaselines = new Map<string, number>();
+function baseline(fontFamily: string) {
+  const cached = browserBaselines.get(fontFamily);
+  if (cached !== undefined) return cached;
   const line = document.createElement("span"),
     marker = document.createElement("span");
   line.setAttribute("aria-hidden", "true");
@@ -19,7 +20,7 @@ function baseline() {
     left: "-10000px",
     top: "0",
     whiteSpace: "pre",
-    fontFamily: pdfTextFont,
+    fontFamily: fontFamilyCSS(fontFamily),
     fontSize: "100px",
     lineHeight: "1.2",
   });
@@ -31,11 +32,12 @@ function baseline() {
   });
   line.append("Hg", marker);
   document.body.append(line);
-  browserBaseline =
+  const ratio =
     (marker.getBoundingClientRect().top - line.getBoundingClientRect().top) /
     100;
   line.remove();
-  return browserBaseline;
+  browserBaselines.set(fontFamily, ratio);
+  return ratio;
 }
 
 // MuPDF's plain WinAnsi text uses a .8 em first baseline; its Unicode shaping
@@ -47,6 +49,7 @@ const winAnsi =
 export function PdfTextInput({
   ref,
   fontSize,
+  fontFamily = DEFAULT_FONT,
   scale,
   color,
   opacity = 1,
@@ -55,28 +58,25 @@ export function PdfTextInput({
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & {
   ref?: Ref<HTMLTextAreaElement>;
   fontSize: number;
+  fontFamily?: string;
   scale: number;
   color: string;
   opacity?: number;
   value: string;
 }) {
-  const [ratio, setRatio] = useState(browserBaseline ?? 0.95);
+  const [ratio, setRatio] = useState(browserBaselines.get(fontFamily) ?? 0.95);
   useLayoutEffect(() => {
-    if (editorFontsReady) {
-      setRatio(baseline());
-      return;
-    }
     let active = true;
-    void loadEditorFont()
+    void loadEditorFont(fontFamily)
       .then(() => {
-        if (active) setRatio(baseline());
+        if (active) setRatio(baseline(fontFamily));
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, []);
-  const simple = winAnsi.test(value);
+  }, [fontFamily]);
+  const simple = fontFamily === DEFAULT_FONT && winAnsi.test(value);
   const offset = (ratio - (simple ? 0.8 : 0.9)) * fontSize * scale;
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -86,7 +86,7 @@ export function PdfTextInput({
         value={value}
         className="relative w-full resize-none overflow-hidden bg-transparent p-0 outline-none placeholder:text-stone-400 [color-scheme:light]"
         style={{
-          fontFamily: pdfTextFont,
+          fontFamily: fontFamilyCSS(fontFamily),
           fontSize: fontSize * scale,
           lineHeight: 1.2,
           fontKerning: simple ? "none" : "normal",

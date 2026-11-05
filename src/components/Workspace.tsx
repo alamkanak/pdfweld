@@ -71,6 +71,8 @@ export function Workspace() {
       const state = useApp.getState();
       if (state.dialog || state.prompt || state.error) return;
       if (event.key !== "Escape") return;
+      // Let the font picker collapse before Escape closes Appearance.
+      if ((event.target as Element).closest("[data-font-picker-open]")) return;
       event.preventDefault();
       event.stopPropagation();
       setOptions(false);
@@ -411,7 +413,7 @@ export function Workspace() {
                   <div
                     role="region"
                     aria-label="Appearance"
-                    className="absolute right-0 top-12 z-30 max-h-[min(70dvh,520px)] w-64 overflow-y-auto rounded-lg border border-white/10 bg-studio-800 p-3 shadow-panel"
+                    className="absolute right-0 top-12 z-30 max-h-[min(70dvh,620px)] w-72 max-w-[calc(100vw-24px)] overflow-y-auto rounded-lg border border-white/10 bg-studio-800 p-3 shadow-panel"
                   >
                     <AppearanceControls />
                   </div>

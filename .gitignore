@@ -8,5 +8,6 @@ playwright-report/
 .cache/
 test-results-*/
 *.tsbuildinfo
+public/fonts/google/*.ttf
 .env.local
 .env.*.local

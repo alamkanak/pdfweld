@@ -5,6 +5,7 @@ import { loadEditorFont } from "../lib/editor-font";
 import { annotationColor } from "../lib/text-editing";
 import type { AnnotationInfo } from "../lib/types";
 import { PdfTextInput, pdfTextFont } from "./PdfTextInput";
+import { fontFamilyCSS } from "../lib/font-catalog";
 
 export function TextPreview({
   annotation,
@@ -14,15 +15,19 @@ export function TextPreview({
   scale: number;
 }) {
   useEffect(() => {
-    void loadEditorFont().catch((error) => useApp.getState().fail(error));
-  }, []);
+    void loadEditorFont(annotation.fontFamily).catch((error) =>
+      useApp.getState().fail(error),
+    );
+  }, [annotation.fontFamily]);
   return (
     <div
       data-text-preview
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap [overflow-wrap:anywhere]"
       style={{
-        fontFamily: pdfTextFont,
+        fontFamily: annotation.fontFamily
+          ? fontFamilyCSS(annotation.fontFamily)
+          : pdfTextFont,
         fontSize: (annotation.fontSize || 18) * scale,
         lineHeight: 1.2,
         color: annotationColor(annotation),
@@ -34,6 +39,7 @@ export function TextPreview({
         aria-hidden="true"
         value={annotation.text}
         fontSize={annotation.fontSize || 18}
+        fontFamily={annotation.fontFamily}
         scale={scale}
         color={annotationColor(annotation)}
         opacity={annotation.opacity ?? 1}

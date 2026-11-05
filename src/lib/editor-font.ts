@@ -1,6 +1,29 @@
+import { DEFAULT_FONT, fontAlias } from "./font-catalog";
+import { loadFontData } from "./font-assets";
+
 let font: Promise<void> | undefined;
 export let editorFontsReady = false;
-export function loadEditorFont() {
+const custom = new Map<string, Promise<void>>();
+export async function loadEditorFont(id = DEFAULT_FONT): Promise<void> {
+  await loadDefaultFonts();
+  if (id === DEFAULT_FONT) return;
+  let pending = custom.get(id);
+  if (!pending) {
+    pending = loadFontData(id)
+      .then(async (data) => {
+        const face = await new FontFace(fontAlias(id), data).load();
+        document.fonts.add(face);
+      })
+      .catch((error) => {
+        custom.delete(id);
+        throw error;
+      });
+    custom.set(id, pending);
+  }
+  await pending;
+}
+
+function loadDefaultFonts() {
   return (font ||= Promise.all([
     new FontFace(
       "PDFWeld Helvetica",

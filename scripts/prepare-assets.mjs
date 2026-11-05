@@ -1,4 +1,5 @@
 import { copyFileSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
+import "./prepare-google-fonts.mjs";
 mkdirSync("public/ocr", { recursive: true });
 copyFileSync(
   "node_modules/tesseract.js/dist/worker.min.js",

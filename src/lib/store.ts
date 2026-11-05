@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { engine } from "./client";
 import { library, download, pickFile } from "./files";
 import { thumbnails } from "./thumbnails";
+import { DEFAULT_FONT } from "./font-catalog";
 import type { HomeToolId } from "./home-tools";
 import type {
   BenchmarkReport,
@@ -44,6 +45,7 @@ interface State {
   color: string;
   width: number;
   textSize: number;
+  fontFamily: string;
   textDraft: TextDraft | null;
   appearanceOpen: boolean;
   opacity: number;
@@ -111,6 +113,7 @@ export const useApp = create<State>((set, get) => ({
   color: "#b8ce5d",
   width: 2.5,
   textSize: 18,
+  fontFamily: DEFAULT_FONT,
   textDraft: null,
   appearanceOpen: false,
   opacity: 1,
@@ -317,6 +320,7 @@ export const useApp = create<State>((set, get) => ({
                     text: draft.text,
                     color: draft.color,
                     fontSize: draft.fontSize,
+                    fontFamily: draft.fontFamily,
                     opacity: draft.opacity,
                     rect: draft.rect,
                   },
@@ -328,6 +332,7 @@ export const useApp = create<State>((set, get) => ({
               text: draft.text,
               color: draft.color,
               width: draft.fontSize,
+              fontFamily: draft.fontFamily,
               opacity: draft.opacity,
               replaceRect: draft.replaceRect,
               author: s.author,

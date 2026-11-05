@@ -1,13 +1,27 @@
 import { test, expect, type Page } from "@playwright/test";
 
-async function start(page: Page, fontSize: number, content: string) {
+async function start(
+  page: Page,
+  fontSize: number,
+  content: string,
+  fontFamily?: string,
+) {
   await page.goto("/");
   await page.waitForFunction(() => !!window.pdfweld);
-  await page.evaluate(async (fontSize) => {
-    await window.pdfweld.openSample();
-    await window.pdfweld.action({ type: "blank", at: 0 });
-    window.pdfweld.state().set({ textSize: fontSize, color: "#3259a4" });
-  }, fontSize);
+  await page.evaluate(
+    async ({ fontSize, fontFamily }) => {
+      await window.pdfweld.openSample();
+      await window.pdfweld.action({ type: "blank", at: 0 });
+      window.pdfweld
+        .state()
+        .set({
+          textSize: fontSize,
+          color: "#3259a4",
+          ...(fontFamily ? { fontFamily } : {}),
+        });
+    },
+    { fontSize, fontFamily },
+  );
   await page.getByRole("button", { name: "Add text (T)", exact: true }).click();
   const box = (await page.locator('[data-page="0"]').boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.12, box.y + box.width * 0.15);
@@ -21,6 +35,16 @@ async function start(page: Page, fontSize: number, content: string) {
         font.family.includes("PDFWeld Helvetica") && font.status === "loaded",
     ),
   );
+  if (fontFamily)
+    await page.waitForFunction(
+      (id) =>
+        Array.from(document.fonts).some(
+          (font) =>
+            font.family.includes(`PDFWeldFont${id}`) &&
+            font.status === "loaded",
+        ),
+      fontFamily,
+    );
 }
 
 for (const fontSize of [6, 18, 32]) {
@@ -62,11 +86,16 @@ for (const fontSize of [6, 18, 32]) {
   });
 }
 
-for (const content of ["Keep this text steady.", "বাংলা লেখা"]) {
-  test(`text ink stays in place after Done: ${content}`, async ({
+for (const { content, fontFamily } of [
+  { content: "Keep this text steady.", fontFamily: undefined },
+  { content: "বাংলা লেখা", fontFamily: undefined },
+  { content: "Keep this text steady.", fontFamily: "roboto" },
+  { content: "বাংলা লেখা", fontFamily: "notoserifbengali" },
+]) {
+  test(`text ink stays in place after Done: ${content} (${fontFamily || "default"})`, async ({
     page,
   }, info) => {
-    await start(page, 24, content);
+    await start(page, 24, content, fontFamily);
     const clip = (await page.locator("[data-text-editor]").boundingBox())!;
     const ink = async () => {
       const png = await page.screenshot({ clip, scale: "css", caret: "hide" });

@@ -52,7 +52,8 @@ export function InlineTextEditor({
   useEffect(() => {
     if (!identity) return;
     let active = true;
-    void loadEditorFont()
+    setFontReady(false);
+    void loadEditorFont(draft?.fontFamily)
       .then(() => {
         if (active) setFontReady(true);
       })
@@ -82,7 +83,7 @@ export function InlineTextEditor({
       document.removeEventListener("pointerdown", outside, true);
       window.visualViewport?.removeEventListener("resize", reveal);
     };
-  }, [identity]);
+  }, [identity, draft?.fontFamily]);
   useLayoutEffect(() => {
     const element = input.current;
     if (!draft || !element || phase || draft.fixedSize) return;
@@ -106,7 +107,14 @@ export function InlineTextEditor({
           ],
         },
       });
-  }, [identity, draft?.text, draft?.fontSize, scale, fontReady]);
+  }, [
+    identity,
+    draft?.text,
+    draft?.fontSize,
+    draft?.fontFamily,
+    scale,
+    fontReady,
+  ]);
   if (!draft) return null;
   const patch = (values: Partial<typeof draft>) => {
     const current = useApp.getState().textDraft;
@@ -135,6 +143,7 @@ export function InlineTextEditor({
         disabled={busy}
         spellCheck={false}
         fontSize={draft.fontSize}
+        fontFamily={draft.fontFamily}
         scale={scale}
         color={draft.color}
         opacity={draft.opacity}

@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { spawnSync, spawn } from "node:child_process";
 if (!existsSync("node_modules/vite")) {
   console.log("Installing locked dependencies…");
@@ -9,7 +9,10 @@ if (!existsSync("node_modules/vite")) {
 }
 if (
   !existsSync("public/ocr/eng.traineddata.gz") ||
-  !existsSync("public/ocr/worker.min.js")
+  !existsSync("public/ocr/worker.min.js") ||
+  JSON.parse(readFileSync("src/lib/google-fonts.json", "utf8")).fonts.some(
+    (font) => !existsSync(`public/fonts/google/${font.file}`),
+  )
 ) {
   const assets = spawnSync(process.execPath, ["scripts/prepare-assets.mjs"], {
     stdio: "inherit",

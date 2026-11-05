@@ -1,5 +1,5 @@
 import { PDFEngine } from "../lib/engine";
-import { ensureTextFont } from "../lib/text-font";
+import { ensureSelectedFont } from "../lib/text-font";
 const engine = new PDFEngine();
 self.onmessage = async ({ data: { id, method, args } }) => {
   try {
@@ -12,7 +12,12 @@ self.onmessage = async ({ data: { id, method, args } }) => {
           "annotation-transform",
         ].includes(args[0]?.type))
     )
-      await ensureTextFont();
+      await ensureSelectedFont(
+        method === "addMark"
+          ? args[0]?.fontFamily
+          : args[0]?.fontFamily ||
+              engine.textFontForAnnotation(args[0].page, args[0].id),
+      );
     const fn = (
       engine as unknown as Record<string, (...args: unknown[]) => unknown>
     )[method];

@@ -1,4 +1,6 @@
 import mupdf from "mupdf";
+import { DEFAULT_FONT, findFont, fontAlias } from "./font-catalog";
+import { ensureSelectedFont, missingFontCharacters } from "./text-font";
 import { parsePages } from "./page-ranges";
 import {
   coversTextQuad,
@@ -69,6 +71,45 @@ export class PDFEngine {
   private originalSigned = false;
   private edited = false;
   private password = "";
+  async prepareTextFont(id: string, text = "") {
+    await ensureSelectedFont(id);
+    return { missing: missingFontCharacters(id, text) };
+  }
+  textFontForAnnotation(page: number, id: number) {
+    return usePage(
+      this.require(),
+      page,
+      (p) =>
+        p
+          .getAnnotations()
+          .find((a) => a.getObject().asIndirect() === id)
+          ?.getObject()
+          .get("PDFWeldFont")
+          .asString() || DEFAULT_FONT,
+    );
+  }
+  private applyTextFont(a: PDFAnnotation, id: string) {
+    if (id !== DEFAULT_FONT && !findFont(id))
+      throw new Error("Unknown text font.");
+    a.getObject().put("PDFWeldFont", this.require().newString(id));
+    // Rich layout is required for custom families even for plain Latin text.
+    // Leave contents as plain text: MuPDF escapes HTML characters itself.
+    a.getObject().delete("RC");
+    if (id === DEFAULT_FONT) a.getObject().delete("DS");
+    else {
+      const { size, color } = a.getDefaultAppearance();
+      const hex = color
+        .map((c) =>
+          Math.round(c * 255)
+            .toString(16)
+            .padStart(2, "0"),
+        )
+        .join("");
+      a.setRichDefaults(
+        `font-family:${fontAlias(id)};font-size:${size}pt;color:#${hex};`,
+      );
+    }
+  }
   open(data: Uint8Array, name: string, password = "") {
     const next = new mupdf.PDFDocument(data);
     if (next.needsPassword() && !next.authenticatePassword(password)) {
@@ -244,6 +285,10 @@ export class PDFEngine {
         fontSize:
           a.getType() === "FreeText"
             ? a.getDefaultAppearance().size
+            : undefined,
+        fontFamily:
+          a.getType() === "FreeText"
+            ? a.getObject().get("PDFWeldFont").asString() || undefined
             : undefined,
         opacity: a.getOpacity(),
         width: a.hasBorder() ? a.getBorderWidth() : undefined,
@@ -530,6 +575,7 @@ export class PDFEngine {
             Number.isFinite(m.width) && m.width >= 6 ? m.width : 14,
             rgb(m.color),
           );
+          if (m.fontFamily) this.applyTextFont(a, m.fontFamily);
           a.setBorderWidth(0);
           a.setRect(rect);
         }
@@ -813,6 +859,11 @@ export class PDFEngine {
                   : old.size,
                 typeof op.color === "string" ? rgb(op.color) : old.color,
               );
+              const family =
+                typeof op.fontFamily === "string"
+                  ? op.fontFamily
+                  : a.getObject().get("PDFWeldFont").asString();
+              if (family) this.applyTextFont(a, family);
               a.getObject().delete("C");
               a.setBorderWidth(0);
             }

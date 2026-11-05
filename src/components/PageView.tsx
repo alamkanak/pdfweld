@@ -424,6 +424,7 @@ export const PageView = memo(function PageView({
             kind,
             color: s.color,
             fontSize,
+            fontFamily: s.fontFamily,
             opacity: s.opacity,
             replaceRect: kind === "replace" ? [...rect] : undefined,
             fixedSize,

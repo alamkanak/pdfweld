@@ -17,6 +17,7 @@ import { useElementGesture } from "../hooks/use-element-gesture";
 import { transformAnnotation } from "../lib/annotation-operations";
 import { AnnotationBackground, TextPreview } from "./AnnotationPreview";
 import { loadEditorFont } from "../lib/editor-font";
+import { DEFAULT_FONT } from "../lib/font-catalog";
 
 export function annotationLabel(a: AnnotationInfo) {
   return a.type === "FreeText"
@@ -97,7 +98,10 @@ export function AnnotationElement({
         color: annotationColor(a),
         opacity: a.opacity ?? 1,
         ...(a.type === "FreeText"
-          ? { textSize: a.fontSize || 18 }
+          ? {
+              textSize: a.fontSize || 18,
+              fontFamily: a.fontFamily || DEFAULT_FONT,
+            }
           : { width: a.width || 2.5 }),
       });
       root.current?.focus({ preventScroll: true });
@@ -110,7 +114,9 @@ export function AnnotationElement({
   const dragging = phase !== null;
   useEffect(() => {
     if (selected && a.type === "FreeText") {
-      void loadEditorFont().catch((error) => useApp.getState().fail(error));
+      void loadEditorFont(a.fontFamily).catch((error) =>
+        useApp.getState().fail(error),
+      );
       return;
     }
     if (!selected || a.type === "FreeText") return;

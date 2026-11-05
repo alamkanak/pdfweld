@@ -80,7 +80,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
         workbox: {
           clientsClaim: true,
           globPatterns: ["**/*.{js,css,html,svg,woff2,ttf,otf,wasm}"],
-          globIgnores: ["**/ocr/**", "tools/**", "404.html"],
+          globIgnores: ["**/ocr/**", "**/fonts/google/**", "tools/**", "404.html"],
           additionalManifestEntries: [
             { url: "field-notes.pdf", revision: "1" },
             { url: "field-notes-cover.png", revision: "1" },

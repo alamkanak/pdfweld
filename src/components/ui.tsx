@@ -107,7 +107,7 @@ export function Input({
   className,
   compact = false,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { compact?: boolean }) {
+}: React.ComponentProps<"input"> & { compact?: boolean }) {
   return (
     <input
       {...props}

@@ -1,6 +1,7 @@
 import { useApp } from "./store";
 import { engine } from "./client";
 import type { AnnotationInfo } from "./types";
+import { DEFAULT_FONT } from "./font-catalog";
 
 export const annotationColor = (a: AnnotationInfo) =>
   a.color.length === 3
@@ -33,6 +34,7 @@ export async function editText(page: number, annotation: AnnotationInfo) {
     selectedAnnotation: { page, id: a.id },
     color: annotationColor(a),
     textSize: a.fontSize || 18,
+    fontFamily: a.fontFamily || DEFAULT_FONT,
     opacity: a.opacity ?? 1,
     textDraft: {
       page,
@@ -42,6 +44,7 @@ export async function editText(page: number, annotation: AnnotationInfo) {
       kind: "text",
       color: annotationColor(a),
       fontSize: a.fontSize || 18,
+      fontFamily: a.fontFamily || DEFAULT_FONT,
       opacity: a.opacity ?? 1,
       fixedSize: true,
     },

@@ -4,6 +4,8 @@ import { engine } from "../lib/client";
 import { annotationColor } from "../lib/text-editing";
 import type { AnnotationInfo } from "../lib/types";
 import { ColorPicker, Input, Label } from "./ui";
+import { FontPicker } from "./FontPicker";
+import { DEFAULT_FONT } from "../lib/font-catalog";
 
 export function AppearanceControls() {
   const selected = useApp((s) => s.selectedAnnotation);
@@ -13,6 +15,8 @@ export function AppearanceControls() {
   const color = useApp((s) => s.color);
   const width = useApp((s) => s.width);
   const textSize = useApp((s) => s.textSize);
+  const fontFamily = useApp((s) => s.fontFamily);
+  const documentId = useApp((s) => s.id);
   const opacity = useApp((s) => s.opacity);
   const author = useApp((s) => s.author);
   const busy = useApp((s) => !!s.busy);
@@ -51,6 +55,7 @@ export function AppearanceControls() {
     values: {
       color?: string;
       fontSize?: number;
+      fontFamily?: string;
       width?: number;
       opacity?: number;
     },
@@ -61,6 +66,9 @@ export function AppearanceControls() {
     useApp.setState({
       ...(values.color ? { color: values.color } : {}),
       ...(values.fontSize !== undefined ? { textSize: values.fontSize } : {}),
+      ...(values.fontFamily !== undefined
+        ? { fontFamily: values.fontFamily }
+        : {}),
       ...(values.width !== undefined ? { width: values.width } : {}),
       ...(values.opacity !== undefined ? { opacity: values.opacity } : {}),
     });
@@ -97,6 +105,18 @@ export function AppearanceControls() {
             ? "Selection appearance"
             : "Tool appearance"}
       </h2>
+      {isText && (
+        <FontPicker
+          value={
+            draft?.fontFamily ||
+            (annotation ? annotation.fontFamily || DEFAULT_FONT : fontFamily)
+          }
+          text={draft?.text || annotation?.text || ""}
+          disabled={disabled}
+          contextKey={`${documentId}:${draft ? `draft-${draft.page}-${draft.id ?? "new"}` : selected ? `${selected.page}-${selected.id}` : tool}`}
+          onChange={(fontFamily) => change({ fontFamily }, true)}
+        />
+      )}
       {isImage ? (
         <p className="text-xs leading-5 text-studio-400">
           Images keep their original colors.

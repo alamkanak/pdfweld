@@ -79,6 +79,7 @@ export interface AnnotationInfo {
   replyTo?: number;
   locked: boolean;
   fontSize?: number;
+  fontFamily?: string;
   opacity?: number;
   width?: number;
   signatureGroup?: string;
@@ -91,6 +92,7 @@ export interface TextDraft {
   kind: "text" | "replace";
   color: string;
   fontSize: number;
+  fontFamily?: string;
   opacity: number;
   replaceRect?: Rect;
   fixedSize?: boolean;
@@ -130,6 +132,7 @@ export interface Mark {
   points?: Point[];
   signatureGroup?: string;
   text?: string;
+  fontFamily?: string;
   color: string;
   width: number;
   opacity: number;
